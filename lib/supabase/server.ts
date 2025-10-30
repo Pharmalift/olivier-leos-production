@@ -1,35 +1,41 @@
-import { createServerClient, type CookieOptions } from '@supabase/auth-helpers-nextjs'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export const createClient = () => {
   const cookieStore = cookies()
 
-  return createServerClient(
+  // Utiliser createClient de supabase-js qui est compatible avec l'Edge Runtime
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+      auth: {
+        storage: {
+          getItem: (key: string) => {
+            return cookieStore.get(key)?.value ?? null
+          },
+          setItem: (key: string, value: string) => {
+            try {
+              cookieStore.set(key, value, {
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+              })
+            } catch (error) {
+              // Ignore errors from Server Components
+            }
+          },
+          removeItem: (key: string) => {
+            try {
+              cookieStore.delete(key)
+            } catch (error) {
+              // Ignore errors from Server Components
+            }
+          },
         },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+        flowType: 'pkce',
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        persistSession: true,
       },
     }
   )
