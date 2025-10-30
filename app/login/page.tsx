@@ -30,17 +30,27 @@ export default function Login() {
     setLoading(true)
 
     try {
+      console.log('Tentative de connexion à Supabase...')
+      console.log('URL Supabase:', supabase.supabaseUrl)
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (authError) throw authError
+      console.log('Réponse Supabase:', { data, error: authError })
+
+      if (authError) {
+        console.error('Erreur d\'authentification:', authError)
+        throw authError
+      }
 
       // Vérifier que la session est bien établie
       if (!data.session) {
         throw new Error('Session non établie')
       }
+
+      console.log('Session établie avec succès')
 
       // Attendre un peu pour que la session soit bien sauvegardée
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -48,7 +58,17 @@ export default function Login() {
       // Rediriger vers le dashboard
       window.location.href = '/'
     } catch (error: any) {
-      setError(error.message || 'Erreur lors de la connexion')
+      console.error('Erreur complète:', error)
+
+      let errorMessage = 'Erreur lors de la connexion'
+
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.toString().includes('Load failed')) {
+        errorMessage = 'Erreur de connexion à Supabase. Vérifiez votre connexion réseau.'
+      }
+
+      setError(errorMessage)
       setLoading(false)
     }
   }
