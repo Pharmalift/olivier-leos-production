@@ -30,35 +30,54 @@ export default function Login() {
     setLoading(true)
 
     try {
-      console.log('Tentative de connexion à Supabase...')
-      console.log('URL Supabase:', supabase.supabaseUrl)
+      console.log('🔐 Tentative de connexion à Supabase...')
+      console.log('📧 Email:', email)
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      console.log('Réponse Supabase:', { data, error: authError })
+      console.log('📊 Réponse Supabase:', {
+        hasSession: !!data.session,
+        hasUser: !!data.user,
+        error: authError
+      })
 
       if (authError) {
-        console.error('Erreur d\'authentification:', authError)
+        console.error('❌ Erreur d\'authentification:', authError)
         throw authError
       }
 
-      // Vérifier que la session est bien établie
       if (!data.session) {
         throw new Error('Session non établie')
       }
 
-      console.log('Session établie avec succès')
+      console.log('✅ Session établie avec succès')
+      console.log('🔑 Access Token:', data.session.access_token.substring(0, 20) + '...')
 
-      // Attendre un peu pour que la session soit bien sauvegardée
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Sauvegarder la session dans les cookies pour le serveur
+      console.log('💾 Sauvegarde de la session dans les cookies...')
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+      })
+
+      console.log('✅ Session sauvegardée, redirection vers /')
+
+      // Attendre un peu pour que les cookies soient bien définis
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // Rediriger vers le dashboard
       window.location.href = '/'
     } catch (error: any) {
-      console.error('Erreur complète:', error)
+      console.error('❌ Erreur complète:', error)
 
       let errorMessage = 'Erreur lors de la connexion'
 
