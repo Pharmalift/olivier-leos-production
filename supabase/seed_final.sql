@@ -34,14 +34,14 @@ INSERT INTO products (sku, name, category, description, price_ht, price_ttc, pri
 
 -- PHARMACIES DE TEST
 INSERT INTO pharmacies (name, address, postal_code, city, phone, email, sector, status, first_contact_date) VALUES
-  ('Pharmacie de la Gare', '12 Avenue de la Gare', '06000', 'Nice', '04 93 88 12 34', 'contact@pharmacie-gare-nice.fr', 'PACA', 'actif', '2024-01-15'),
-  ('Pharmacie du Centre', '45 Rue Principale', '13001', 'Marseille', '04 91 55 22 33', 'info@pharmacie-centre-marseille.fr', 'PACA', 'actif', '2024-02-20'),
-  ('Pharmacie Saint-Jean', '8 Place Saint-Jean', '06400', 'Cannes', '04 93 39 44 55', 'pharmacie.stjean@orange.fr', 'PACA', 'actif', '2024-03-10'),
+  ('Pharmacie de la Gare', '12 Avenue de la Gare', '06000', 'Nice', '04 93 88 12 34', 'contact@pharmacie-gare-nice.fr', 'PACA', 'active', '2024-01-15'),
+  ('Pharmacie du Centre', '45 Rue Principale', '13001', 'Marseille', '04 91 55 22 33', 'info@pharmacie-centre-marseille.fr', 'PACA', 'active', '2024-02-20'),
+  ('Pharmacie Saint-Jean', '8 Place Saint-Jean', '06400', 'Cannes', '04 93 39 44 55', 'pharmacie.stjean@orange.fr', 'PACA', 'active', '2024-03-10'),
   ('Pharmacie Moderne', '23 Boulevard Victor Hugo', '06300', 'Nice', '04 93 87 66 77', 'moderne@pharmacie-nice.com', 'PACA', 'prospect', '2024-11-05'),
   ('Pharmacie des Pins', '67 Avenue des Pins', '83000', 'Toulon', '04 94 22 88 99', 'contact@pharmacie-pins.fr', 'PACA', 'prospect', '2024-12-01'),
-  ('Pharmacie du Port', '34 Quai du Port', '13002', 'Marseille', '04 91 90 11 22', 'pharmacieduport@gmail.com', 'PACA', 'actif', '2024-04-18'),
-  ('Pharmacie Centrale', '15 Rue de la République', '84000', 'Avignon', '04 90 82 33 44', 'centrale.avignon@pharmacie.fr', 'PACA', 'inactif', '2023-08-22'),
-  ('Pharmacie Belle Vue', '89 Corniche Kennedy', '13007', 'Marseille', '04 91 52 55 66', 'bellevue@pharmacie-marseille.fr', 'PACA', 'actif', '2024-05-30');
+  ('Pharmacie du Port', '34 Quai du Port', '13002', 'Marseille', '04 91 90 11 22', 'pharmacieduport@gmail.com', 'PACA', 'active', '2024-04-18'),
+  ('Pharmacie Centrale', '15 Rue de la République', '84000', 'Avignon', '04 90 82 33 44', 'centrale.avignon@pharmacie.fr', 'PACA', 'inactive', '2023-08-22'),
+  ('Pharmacie Belle Vue', '89 Corniche Kennedy', '13007', 'Marseille', '04 91 52 55 66', 'bellevue@pharmacie-marseille.fr', 'PACA', 'active', '2024-05-30');
 
 -- VÉRIFICATIONS
 SELECT category, COUNT(*) as nombre FROM products WHERE is_active = true GROUP BY category ORDER BY category;
