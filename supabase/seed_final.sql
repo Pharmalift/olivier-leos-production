@@ -1,8 +1,7 @@
 -- ============================================================================
--- L'OLIVIER DE LEOS - IMPORT DES 19 PRODUITS (VERSION FINALE CORRIGÉE)
+-- L'OLIVIER DE LEOS - IMPORT DES 19 PRODUITS (VERSION FINALE)
 -- ============================================================================
--- Adapté au schéma réel avec TOUTES les colonnes obligatoires
--- price_discounted est NOT NULL donc on la met = price_ttc par défaut
+-- Import simple sans ON CONFLICT (pas de contrainte UNIQUE sur sku)
 -- ============================================================================
 
 -- SOINS VISAGE (9 produits)
@@ -15,14 +14,7 @@ INSERT INTO products (sku, name, category, description, price_ht, price_ttc, pri
   ('OL-SV-006', 'Mousse Nettoyante Douceur 150ml', 'Soins Visage', 'Mousse nettoyante délicate à l''huile d''olive et eau florale. Élimine les impuretés sans agresser. pH neutre.', 14.00, 21.90, 21.90, 6, true),
   ('OL-SV-007', 'Gommage Doux Visage 75ml', 'Soins Visage', 'Exfoliant doux aux micro-billes d''olive et miel. Affine le grain de peau. Utilisation 1 à 2 fois par semaine.', 15.50, 23.90, 23.90, 6, true),
   ('OL-SV-008', 'Masque Purifiant à l''Argile 75ml', 'Soins Visage', 'Masque à l''argile verte et huile d''olive. Purifie les peaux mixtes à grasses. Resserre les pores.', 13.50, 20.90, 20.90, 6, true),
-  ('OL-SV-009', 'Masque Hydratant Intensif 75ml', 'Soins Visage', 'Masque crème ultra-hydratant à l''huile d''olive et aloé vera. Idéal pour les peaux sèches et déshydratées.', 14.50, 22.90, 22.90, 6, true)
-ON CONFLICT (sku) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description,
-  price_ht = EXCLUDED.price_ht,
-  price_ttc = EXCLUDED.price_ttc,
-  price_discounted = EXCLUDED.price_discounted,
-  pcb = EXCLUDED.pcb;
+  ('OL-SV-009', 'Masque Hydratant Intensif 75ml', 'Soins Visage', 'Masque crème ultra-hydratant à l''huile d''olive et aloé vera. Idéal pour les peaux sèches et déshydratées.', 14.50, 22.90, 22.90, 6, true);
 
 -- SOINS CORPS & CHEVEUX (7 produits)
 INSERT INTO products (sku, name, category, description, price_ht, price_ttc, price_discounted, pcb, is_active) VALUES
@@ -32,32 +24,15 @@ INSERT INTO products (sku, name, category, description, price_ht, price_ttc, pri
   ('OL-SC-004', 'Huile Corps Sèche 100ml', 'Soins Corps & Cheveux', 'Huile sèche multi-usage à l''huile d''olive vierge extra. Nourrit peau et cheveux. Fini non gras, pénétration immédiate.', 19.50, 29.90, 29.90, 6, true),
   ('OL-SC-005', 'Baume Mains Réparateur 75ml', 'Soins Corps & Cheveux', 'Baume ultra-nourrissant pour mains sèches et abîmées. Huile d''olive, karité et cire d''abeille. Protection longue durée.', 11.00, 16.90, 16.90, 12, true),
   ('OL-SC-006', 'Shampoing Doux Tous Cheveux 250ml', 'Soins Corps & Cheveux', 'Shampoing doux à l''huile d''olive bio. Nettoie en douceur, apporte brillance et souplesse. Sans silicones.', 13.00, 19.90, 19.90, 6, true),
-  ('OL-SC-007', 'Après-Shampoing Nutrition 250ml', 'Soins Corps & Cheveux', 'Soin démêlant nourrissant à l''huile d''olive et protéines de soie. Facilite le coiffage, apporte brillance.', 14.00, 21.90, 21.90, 6, true)
-ON CONFLICT (sku) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description,
-  price_ht = EXCLUDED.price_ht,
-  price_ttc = EXCLUDED.price_ttc,
-  price_discounted = EXCLUDED.price_discounted,
-  pcb = EXCLUDED.pcb;
+  ('OL-SC-007', 'Après-Shampoing Nutrition 250ml', 'Soins Corps & Cheveux', 'Soin démêlant nourrissant à l''huile d''olive et protéines de soie. Facilite le coiffage, apporte brillance.', 14.00, 21.90, 21.90, 6, true);
 
 -- HÔTEL & SPA (3 produits)
 INSERT INTO products (sku, name, category, description, price_ht, price_ttc, price_discounted, pcb, is_active) VALUES
   ('OL-HS-001', 'Kit Spa Premium (Coffret 5 produits)', 'Hôtel & Spa', 'Coffret spa complet : gel douche 30ml, shampoing 30ml, après-shampoing 30ml, lait corps 30ml, savon 25g. Packaging luxe.', 42.00, 65.00, 65.00, 1, true),
   ('OL-HS-002', 'Set Hôtellerie Confort (Coffret 4 produits)', 'Hôtel & Spa', 'Set accueil hôtel : gel douche 30ml, shampoing 30ml, lait corps 30ml, savon 25g. Packaging élégant biodégradable.', 35.00, 52.00, 52.00, 1, true),
-  ('OL-HS-003', 'Distributeur Mural Professionnel 1L', 'Hôtel & Spa', 'Distributeur mural rechargeable pour gel douche ou shampoing. Design épuré. Compatible avec tous nos produits en format professionnel.', 85.00, 125.00, 125.00, 1, true)
-ON CONFLICT (sku) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description,
-  price_ht = EXCLUDED.price_ht,
-  price_ttc = EXCLUDED.price_ttc,
-  price_discounted = EXCLUDED.price_discounted,
-  pcb = EXCLUDED.pcb;
+  ('OL-HS-003', 'Distributeur Mural Professionnel 1L', 'Hôtel & Spa', 'Distributeur mural rechargeable pour gel douche ou shampoing. Design épuré. Compatible avec tous nos produits en format professionnel.', 85.00, 125.00, 125.00, 1, true);
 
--- ============================================================================
 -- PHARMACIES DE TEST
--- ============================================================================
-
 INSERT INTO pharmacies (name, address, postal_code, city, phone, email, sector, status, first_contact_date) VALUES
   ('Pharmacie de la Gare', '12 Avenue de la Gare', '06000', 'Nice', '04 93 88 12 34', 'contact@pharmacie-gare-nice.fr', 'PACA', 'actif', '2024-01-15'),
   ('Pharmacie du Centre', '45 Rue Principale', '13001', 'Marseille', '04 91 55 22 33', 'info@pharmacie-centre-marseille.fr', 'PACA', 'actif', '2024-02-20'),
@@ -66,13 +41,9 @@ INSERT INTO pharmacies (name, address, postal_code, city, phone, email, sector, 
   ('Pharmacie des Pins', '67 Avenue des Pins', '83000', 'Toulon', '04 94 22 88 99', 'contact@pharmacie-pins.fr', 'PACA', 'prospect', '2024-12-01'),
   ('Pharmacie du Port', '34 Quai du Port', '13002', 'Marseille', '04 91 90 11 22', 'pharmacieduport@gmail.com', 'PACA', 'actif', '2024-04-18'),
   ('Pharmacie Centrale', '15 Rue de la République', '84000', 'Avignon', '04 90 82 33 44', 'centrale.avignon@pharmacie.fr', 'PACA', 'inactif', '2023-08-22'),
-  ('Pharmacie Belle Vue', '89 Corniche Kennedy', '13007', 'Marseille', '04 91 52 55 66', 'bellevue@pharmacie-marseille.fr', 'PACA', 'actif', '2024-05-30')
-ON CONFLICT (name, city) DO NOTHING;
+  ('Pharmacie Belle Vue', '89 Corniche Kennedy', '13007', 'Marseille', '04 91 52 55 66', 'bellevue@pharmacie-marseille.fr', 'PACA', 'actif', '2024-05-30');
 
--- ============================================================================
 -- VÉRIFICATIONS
--- ============================================================================
-
 SELECT category, COUNT(*) as nombre FROM products WHERE is_active = true GROUP BY category ORDER BY category;
-SELECT sku, name, price_ttc, price_discounted FROM products ORDER BY category, sku;
+SELECT sku, name, price_ttc FROM products ORDER BY category, sku;
 SELECT status, COUNT(*) as nombre FROM pharmacies GROUP BY status ORDER BY status;
