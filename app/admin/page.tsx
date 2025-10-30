@@ -239,13 +239,22 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold text-[#6B8E23]">Administration</h1>
             <p className="text-gray-600 mt-2">Gestion globale et statistiques</p>
           </div>
-          <button
-            onClick={exportToExcel}
-            className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-md"
-          >
-            <Download className="w-5 h-5" />
-            <span>Exporter CSV</span>
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => router.push('/admin/products')}
+              className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] transition-colors shadow-md"
+            >
+              <Package className="w-5 h-5" />
+              <span>Gérer les produits</span>
+            </button>
+            <button
+              onClick={exportToExcel}
+              className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-md"
+            >
+              <Download className="w-5 h-5" />
+              <span>Exporter CSV</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats globales du mois */}

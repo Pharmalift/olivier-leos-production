@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Pharmacy, User, PharmacyWithCommercial } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { Search, Eye, ShoppingCart, MapPin } from 'lucide-react'
+import { Search, Eye, ShoppingCart, MapPin, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -94,11 +94,20 @@ export default function PharmaciesPage() {
   return (
     <AppLayout user={user}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-[#6B8E23]">Pharmacies</h1>
-          <p className="text-gray-600 mt-2">
-            {filteredPharmacies.length} pharmacie{filteredPharmacies.length > 1 ? 's' : ''}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#6B8E23]">Pharmacies</h1>
+            <p className="text-gray-600 mt-2">
+              {filteredPharmacies.length} pharmacie{filteredPharmacies.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <Link
+            href="/pharmacies/new"
+            className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Nouvelle pharmacie</span>
+          </Link>
         </div>
 
         {/* Filtres */}
