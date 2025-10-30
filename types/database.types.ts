@@ -55,9 +55,17 @@ export interface Order {
   pharmacy_id: string
   user_id: string
   order_date: string
-  status: 'en_attente' | 'validée' | 'expédiée' | 'livrée' | 'annulée'
-  total_amount: number
+  delivery_address: string | null
+  delivery_schedule: string | null
+  status: 'draft' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  subtotal_ht: number | null
+  total_ht: number | null
+  total_ttc: number | null
+  total_amount: number | null
+  comments: string | null
   notes: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface OrderLine {

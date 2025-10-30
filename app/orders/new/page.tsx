@@ -136,15 +136,17 @@ function NewOrderForm() {
       const orderNumber = `CMD-${Date.now()}`
 
       // Créer la commande
+      const totalHT = calculateTotal()
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           order_number: orderNumber,
           pharmacy_id: selectedPharmacy.id,
           user_id: user.id,
-          order_date: new Date().toISOString(),
-          status: 'en_attente',
-          total_amount: calculateTotal(),
+          order_date: new Date().toISOString().split('T')[0],
+          status: 'pending',
+          total_ht: totalHT,
+          total_amount: totalHT,
           notes: notes || null
         })
         .select()
