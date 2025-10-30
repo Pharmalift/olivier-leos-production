@@ -58,24 +58,34 @@ export default function Login() {
 
       // Sauvegarder la session dans les cookies pour le serveur
       console.log('💾 Sauvegarde de la session dans les cookies...')
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      })
 
-      console.log('✅ Session sauvegardée, redirection vers /')
+      try {
+        const response = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          }),
+        })
 
-      // Attendre un peu pour que les cookies soient bien définis
-      await new Promise(resolve => setTimeout(resolve, 500))
+        if (!response.ok) {
+          console.warn('⚠️ Erreur API session:', response.status)
+        } else {
+          console.log('✅ Cookies sauvegardés')
+        }
+      } catch (err) {
+        console.error('⚠️ Erreur sauvegarde cookies:', err)
+      }
 
-      // Rediriger vers le dashboard
-      window.location.href = '/'
+      // Redirection immédiate vers /admin
+      console.log('🚀 Redirection vers /admin...')
+
+      // Utiliser window.location pour forcer un rechargement complet
+      // Cela garantit que la session est bien chargée côté serveur
+      window.location.href = '/admin'
     } catch (error: any) {
       console.error('❌ Erreur complète:', error)
 
