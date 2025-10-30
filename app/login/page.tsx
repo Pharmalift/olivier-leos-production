@@ -1,26 +1,28 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { LogIn } from 'lucide-react'
 import Link from 'next/link'
 
-function LoginForm() {
+export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Vérifier si redirection depuis signup avec succès
-    if (searchParams.get('success') === 'inscription') {
-      setSuccess('Compte créé avec succès ! Vous pouvez maintenant vous connecter.')
+    // Vérifier si redirection depuis signup avec succès (côté client)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('success') === 'inscription') {
+        setSuccess('Compte créé avec succès ! Vous pouvez maintenant vous connecter.')
+      }
     }
-  }, [searchParams])
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,20 +138,5 @@ function LoginForm() {
         </form>
       </div>
     </div>
-  )
-}
-
-export default function Login() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#6B8E23] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-[#6B8E23]">Chargement...</p>
-        </div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
   )
 }
