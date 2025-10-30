@@ -103,24 +103,23 @@ BEGIN
   END IF;
 END $$;
 
--- Ajouter les colonnes sent_at et created_at à email_logs si elles n'existent pas
+-- Ajouter les colonnes sent_at et created_at à email_logs si la table existe
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'email_logs' AND column_name = 'sent_at'
-  ) THEN
-    ALTER TABLE email_logs ADD COLUMN sent_at TIMESTAMPTZ;
-  END IF;
-END $$;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'email_logs') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'email_logs' AND column_name = 'sent_at'
+    ) THEN
+      ALTER TABLE email_logs ADD COLUMN sent_at TIMESTAMPTZ;
+    END IF;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'email_logs' AND column_name = 'created_at'
-  ) THEN
-    ALTER TABLE email_logs ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'email_logs' AND column_name = 'created_at'
+    ) THEN
+      ALTER TABLE email_logs ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    END IF;
   END IF;
 END $$;
 
