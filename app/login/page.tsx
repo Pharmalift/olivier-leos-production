@@ -28,18 +28,25 @@ function LoginForm() {
     setLoading(true)
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) throw authError
 
-      router.push('/')
-      router.refresh()
+      // Vérifier que la session est bien établie
+      if (!data.session) {
+        throw new Error('Session non établie')
+      }
+
+      // Attendre un peu pour que la session soit bien sauvegardée
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Rediriger vers le dashboard
+      window.location.href = '/'
     } catch (error: any) {
       setError(error.message || 'Erreur lors de la connexion')
-    } finally {
       setLoading(false)
     }
   }
