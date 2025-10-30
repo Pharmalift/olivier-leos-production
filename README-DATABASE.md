@@ -95,10 +95,13 @@ Catalogue des produits L'Olivier de Leos (19 produits).
 | `name` | TEXT | Nom du produit |
 | `category` | TEXT | 'Soins Visage', 'Soins Corps & Cheveux', 'Hôtel & Spa' |
 | `description` | TEXT | Description détaillée |
-| `pcb_price` | DECIMAL(10,2) | Prix pharmacie (HT) |
-| `retail_price` | DECIMAL(10,2) | Prix public conseillé (TTC) |
-| `vat_rate` | DECIMAL(5,2) | Taux de TVA (défaut: 20%) |
-| `stock_quantity` | INTEGER | Quantité en stock |
+| `ean` | TEXT | Code EAN (optionnel) |
+| `price_ht` | DECIMAL(10,2) | Prix hors taxes |
+| `price_ttc` | DECIMAL(10,2) | Prix toutes taxes comprises |
+| `price_discounted` | DECIMAL(10,2) | Prix remisé (si applicable) |
+| `discount` | DECIMAL(5,2) | Pourcentage de remise |
+| `pcb` | INTEGER | Prix de Cession de Base (unités par carton) |
+| `is_recommended` | BOOLEAN | Produit recommandé |
 | `is_active` | BOOLEAN | Produit actif/inactif |
 | `image_url` | TEXT | URL de l'image produit |
 | `created_at` | TIMESTAMPTZ | Date de création |
@@ -271,8 +274,8 @@ Trigger automatique qui met à jour le champ `updated_at` lors d'un UPDATE.
 SELECT
   category,
   COUNT(*) as nombre_produits,
-  SUM(stock_quantity) as stock_total,
-  AVG(pcb_price) as prix_moyen
+  AVG(price_ht) as prix_moyen_ht,
+  AVG(price_ttc) as prix_moyen_ttc
 FROM products
 WHERE is_active = true
 GROUP BY category

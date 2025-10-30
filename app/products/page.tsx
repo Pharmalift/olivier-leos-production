@@ -155,23 +155,24 @@ export default function ProductsPage() {
 
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Prix PCB:</span>
+                    <span className="text-sm text-gray-600">Prix HT:</span>
                     <span className="text-xl font-bold text-[#6B8E23]">
-                      {product.pcb_price.toFixed(2)} €
+                      {product.price_ht.toFixed(2)} €
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Prix public:</span>
-                    <span className="text-gray-900">{product.retail_price.toFixed(2)} €</span>
+                    <span className="text-gray-600">Prix TTC:</span>
+                    <span className="text-gray-900">{product.price_ttc.toFixed(2)} €</span>
                   </div>
+                  {product.price_discounted && product.price_discounted !== product.price_ttc && (
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-gray-600">Prix remisé:</span>
+                      <span className="text-green-600 font-semibold">{product.price_discounted.toFixed(2)} €</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-gray-600">TVA:</span>
-                    <span className="text-gray-900">{product.vat_rate}%</span>
-                  </div>
-                  <div className="mt-3">
-                    <span className={`text-sm ${product.stock_quantity > 10 ? 'text-green-600' : 'text-orange-600'}`}>
-                      Stock: {product.stock_quantity} unités
-                    </span>
+                    <span className="text-gray-600">PCB:</span>
+                    <span className="text-gray-900">{product.pcb} unités</span>
                   </div>
                 </div>
               </div>

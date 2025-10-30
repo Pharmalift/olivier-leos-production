@@ -66,15 +66,21 @@ CREATE TABLE users (
 -- Products (catalogue L'Olivier)
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sku TEXT UNIQUE NOT NULL,
+  sku TEXT NOT NULL,
   name TEXT NOT NULL,
   category TEXT CHECK (category IN ('Soins Visage', 'Soins Corps & Cheveux', 'Hôtel & Spa')),
   description TEXT,
-  pcb_price DECIMAL(10,2) NOT NULL,
-  retail_price DECIMAL(10,2) NOT NULL,
-  vat_rate DECIMAL(5,2) DEFAULT 20.00,
-  stock_quantity INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true
+  ean TEXT,
+  price_ht DECIMAL(10,2) NOT NULL,
+  price_ttc DECIMAL(10,2) NOT NULL,
+  price_discounted DECIMAL(10,2) NOT NULL,
+  discount DECIMAL(5,2),
+  pcb INTEGER NOT NULL,
+  is_recommended BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  image_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Pharmacies

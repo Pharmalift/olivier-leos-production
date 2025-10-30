@@ -13,11 +13,17 @@ export interface Product {
   name: string
   category: 'Soins Visage' | 'Soins Corps & Cheveux' | 'Hôtel & Spa'
   description: string | null
-  pcb_price: number
-  retail_price: number
-  vat_rate: number
-  stock_quantity: number
+  ean: string | null
+  price_ht: number
+  price_ttc: number
+  price_discounted: number | null
+  discount: number | null
+  pcb: number
+  is_recommended: boolean
   is_active: boolean
+  image_url: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface Pharmacy {

@@ -124,7 +124,7 @@ function NewOrderForm() {
   }
 
   function calculateTotal() {
-    return cart.reduce((sum, item) => sum + (item.product.pcb_price * item.quantity), 0)
+    return cart.reduce((sum, item) => sum + (item.product.price_ht * item.quantity), 0)
   }
 
   async function submitOrder() {
@@ -157,8 +157,8 @@ function NewOrderForm() {
         order_id: order.id,
         product_id: item.product.id,
         quantity: item.quantity,
-        unit_price: item.product.pcb_price,
-        line_total: item.product.pcb_price * item.quantity
+        unit_price: item.product.price_ht,
+        line_total: item.product.price_ht * item.quantity
       }))
 
       const { error: linesError } = await supabase
@@ -302,7 +302,7 @@ function NewOrderForm() {
                   <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="font-semibold text-gray-900">{product.name}</div>
                     <div className="text-sm text-gray-600">{product.sku}</div>
-                    <div className="text-lg font-bold text-[#6B8E23] mt-2">{product.pcb_price.toFixed(2)} €</div>
+                    <div className="text-lg font-bold text-[#6B8E23] mt-2">{product.price_ht.toFixed(2)} €</div>
                     <button
                       onClick={() => addToCart(product)}
                       className="mt-3 w-full bg-[#6B8E23] text-white py-2 rounded-lg hover:bg-[#5a7a1d] transition-colors"
@@ -324,7 +324,7 @@ function NewOrderForm() {
                     <div key={item.product.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{item.product.name}</div>
-                        <div className="text-sm text-gray-600">{item.product.pcb_price.toFixed(2)} € x {item.quantity}</div>
+                        <div className="text-sm text-gray-600">{item.product.price_ht.toFixed(2)} € x {item.quantity}</div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <input
@@ -335,7 +335,7 @@ function NewOrderForm() {
                           className="w-20 px-2 py-1 border rounded-lg text-center"
                         />
                         <div className="font-bold text-[#6B8E23] w-24 text-right">
-                          {(item.product.pcb_price * item.quantity).toFixed(2)} €
+                          {(item.product.price_ht * item.quantity).toFixed(2)} €
                         </div>
                         <button
                           onClick={() => removeFromCart(item.product.id)}
@@ -399,7 +399,7 @@ function NewOrderForm() {
                         <div className="font-medium">{item.product.name}</div>
                         <div className="text-sm text-gray-600">Quantité: {item.quantity}</div>
                       </div>
-                      <div className="font-bold">{(item.product.pcb_price * item.quantity).toFixed(2)} €</div>
+                      <div className="font-bold">{(item.product.price_ht * item.quantity).toFixed(2)} €</div>
                     </div>
                   ))}
                 </div>
