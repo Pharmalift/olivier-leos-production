@@ -47,12 +47,12 @@ export default function OrdersPage() {
           .select(`
             *,
             pharmacy:pharmacies(name, city),
-            commercial:users!orders_commercial_id_fkey(full_name)
+            commercial:users!orders_user_id_fkey(full_name)
           `)
           .order('order_date', { ascending: false })
 
         if (userData.role === 'commercial') {
-          query = query.eq('commercial_id', userData.id)
+          query = query.eq('user_id', userData.id)
         }
 
         const { data: ordersData } = await query

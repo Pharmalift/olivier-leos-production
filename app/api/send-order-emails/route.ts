@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         pharmacy:pharmacies!pharmacy_id(*),
-        commercial:users!commercial_id(*),
+        commercial:users!user_id(*),
         order_lines(
           *,
           product:products(*)

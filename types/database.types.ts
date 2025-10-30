@@ -53,7 +53,7 @@ export interface Order {
   id: string
   order_number: string
   pharmacy_id: string
-  commercial_id: string
+  user_id: string
   order_date: string
   status: 'en_attente' | 'validée' | 'expédiée' | 'livrée' | 'annulée'
   total_amount: number

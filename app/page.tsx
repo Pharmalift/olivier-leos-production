@@ -29,7 +29,7 @@ export default async function Dashboard() {
   const { data: orders } = await supabase
     .from('orders')
     .select('*, order_lines(*)')
-    .eq('commercial_id', user.id)
+    .eq('user_id', user.id)
 
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()

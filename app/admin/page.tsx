@@ -95,7 +95,7 @@ export default function AdminPage() {
         .select(`
           *,
           pharmacy:pharmacies(name, city),
-          commercial:users!orders_commercial_id_fkey(full_name)
+          commercial:users!orders_user_id_fkey(full_name)
         `)
         .order('order_date', { ascending: false })
         .limit(10)
@@ -111,7 +111,7 @@ export default function AdminPage() {
             const { data: userOrders } = await supabase
               .from('orders')
               .select('*')
-              .eq('commercial_id', u.id)
+              .eq('user_id', u.id)
 
             const ordersThisMonth = userOrders?.filter(order => {
               const orderDate = new Date(order.order_date)
@@ -171,7 +171,7 @@ export default function AdminPage() {
         .select(`
           *,
           pharmacy:pharmacies(name, city, postal_code),
-          commercial:users!orders_commercial_id_fkey(full_name, email)
+          commercial:users!orders_user_id_fkey(full_name, email)
         `)
         .order('order_date', { ascending: false })
 

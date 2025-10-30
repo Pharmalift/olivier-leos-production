@@ -141,7 +141,7 @@ function NewOrderForm() {
         .insert({
           order_number: orderNumber,
           pharmacy_id: selectedPharmacy.id,
-          commercial_id: user.id,
+          user_id: user.id,
           order_date: new Date().toISOString(),
           status: 'en_attente',
           total_amount: calculateTotal(),
