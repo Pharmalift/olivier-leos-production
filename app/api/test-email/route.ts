@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
 
+// Force Node.js runtime for Nodemailer compatibility
+export const runtime = 'nodejs'
+
 export async function GET() {
   // Protection : uniquement en développement
   if (process.env.NODE_ENV !== 'development') {

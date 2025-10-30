@@ -4,6 +4,9 @@ import { sendEmail } from '@/lib/email'
 import { generateOrderConfirmationEmail } from '@/lib/email-templates/order-confirmation'
 import { generateAdminNotificationEmail } from '@/lib/email-templates/admin-notification'
 
+// Force Node.js runtime for Nodemailer compatibility
+export const runtime = 'nodejs'
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
