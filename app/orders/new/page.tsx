@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Pharmacy, Product, User } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
@@ -12,7 +12,7 @@ interface CartItem {
   quantity: number
 }
 
-export default function NewOrderPage() {
+function NewOrderForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
@@ -442,5 +442,20 @@ export default function NewOrderPage() {
         )}
       </div>
     </AppLayout>
+  )
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#6B8E23] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-[#6B8E23]">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <NewOrderForm />
+    </Suspense>
   )
 }
