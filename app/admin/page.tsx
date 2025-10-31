@@ -241,6 +241,13 @@ export default function AdminPage() {
           </div>
           <div className="flex space-x-3">
             <button
+              onClick={() => router.push('/admin/users')}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            >
+              <UsersIcon className="w-5 h-5" />
+              <span>Gérer les utilisateurs</span>
+            </button>
+            <button
               onClick={() => router.push('/admin/products')}
               className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] transition-colors shadow-md"
             >
