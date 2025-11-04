@@ -158,7 +158,13 @@ function NewOrderForm() {
       const orderLines = cart.map(item => ({
         order_id: order.id,
         product_id: item.product.id,
+        product_name: item.product.name,
+        product_sku: item.product.sku,
         quantity: item.quantity,
+        unit_price_ht: item.product.price_ht,
+        unit_price_ttc: item.product.price_ttc,
+        line_total_ht: item.product.price_ht * item.quantity,
+        line_total_ttc: item.product.price_ttc * item.quantity,
         unit_price: item.product.price_ht,
         line_total: item.product.price_ht * item.quantity
       }))
@@ -170,10 +176,12 @@ function NewOrderForm() {
       if (linesError) throw linesError
 
       // Envoyer les emails en arrière-plan (ne pas attendre)
-      sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
-        console.error('Erreur lors de l\'envoi des emails:', error)
-        // Ne pas bloquer la création de la commande
-      })
+      if (selectedPharmacy.email) {
+        sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
+          console.error('Erreur lors de l\'envoi des emails:', error)
+          // Ne pas bloquer la création de la commande
+        })
+      }
 
       alert('Commande créée avec succès! Les emails de confirmation sont en cours d\'envoi.')
       router.push('/orders')
