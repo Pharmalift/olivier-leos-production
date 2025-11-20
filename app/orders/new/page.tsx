@@ -132,6 +132,17 @@ function NewOrderForm() {
 
     setSubmitting(true)
     try {
+      // Debug: Vérifier le contenu du panier AVANT l'envoi
+      console.log('🛒 Panier avant soumission:', cart)
+      cart.forEach((item, index) => {
+        console.log(`  Produit ${index + 1}:`, {
+          name: item.product.name,
+          sku: item.product.sku,
+          pcb_price: item.product.pcb_price,
+          quantity: item.quantity
+        })
+      })
+
       // Générer numéro de commande
       const orderNumber = `CMD-${Date.now()}`
 
