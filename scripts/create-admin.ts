@@ -53,7 +53,7 @@ async function createAdminAccount() {
     })
 
     if (authError) {
-      if (authError.message.includes('already registered')) {
+      if (authError.message.includes('already registered') || authError.code === 'email_exists') {
         console.log('ℹ️  L\'utilisateur existe déjà dans Auth')
 
         // Récupérer l'utilisateur existant
@@ -160,7 +160,9 @@ async function createAdminAccount() {
 
   } catch (error: any) {
     console.error('\n❌ ERREUR:', error.message)
-    console.error('\nDétails:', error)
+    if (error.code !== 'email_exists') {
+      console.error('\nDétails:', error)
+    }
     process.exit(1)
   }
 }
