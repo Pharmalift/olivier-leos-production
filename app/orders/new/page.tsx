@@ -154,15 +154,23 @@ function NewOrderForm() {
       if (orderError) throw orderError
 
       // Créer les lignes de commande
-      const orderLines = cart.map(item => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_sku: item.product.sku,
-        quantity: item.quantity,
-        unit_price_ht: item.product.pcb_price,
-        line_total: item.product.pcb_price * item.quantity
-      }))
+      const orderLines = cart.map(item => {
+        console.log('Product in cart:', item.product)
+        if (!item.product.pcb_price) {
+          throw new Error(`Le produit ${item.product.name} n'a pas de prix PCB`)
+        }
+        return {
+          order_id: order.id,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_sku: item.product.sku,
+          quantity: item.quantity,
+          unit_price_ht: item.product.pcb_price,
+          line_total: item.product.pcb_price * item.quantity
+        }
+      })
+
+      console.log('Order lines to insert:', orderLines)
 
       const { error: linesError } = await supabase
         .from('order_lines')
