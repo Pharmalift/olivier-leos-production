@@ -66,7 +66,7 @@ export interface OrderLine {
   product_name: string
   product_sku: string
   quantity: number
-  unit_price: number
+  unit_price_ht: number
   line_total: number
   created_at: string
 }

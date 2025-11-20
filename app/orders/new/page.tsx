@@ -160,7 +160,7 @@ function NewOrderForm() {
         product_name: item.product.name,
         product_sku: item.product.sku,
         quantity: item.quantity,
-        unit_price: item.product.pcb_price,
+        unit_price_ht: item.product.pcb_price,
         line_total: item.product.pcb_price * item.quantity
       }))
 
