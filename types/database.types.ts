@@ -13,13 +13,10 @@ export interface Product {
   name: string
   category: 'Soins Visage' | 'Soins Corps & Cheveux' | 'Hôtel & Spa'
   description: string | null
-  ean: string | null
-  price_ht: number
-  price_ttc: number
-  price_discounted: number | null
-  discount: number | null
-  pcb: number
-  is_recommended: boolean
+  pcb_price: number
+  retail_price: number
+  vat_rate: number
+  stock_quantity: number
   is_active: boolean
   image_url: string | null
   created_at: string
@@ -52,17 +49,11 @@ export interface PharmacyNote {
 export interface Order {
   id: string
   order_number: string
-  pharmacy_id: string
-  user_id: string
+  pharmacy_id: string | null
+  commercial_id: string | null
   order_date: string
-  delivery_address: string | null
-  delivery_schedule: string | null
-  status: 'draft' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-  subtotal_ht: number | null
-  total_ht: number | null
-  total_ttc: number | null
-  total_amount: number | null
-  comments: string | null
+  status: 'en_attente' | 'validée' | 'expédiée' | 'livrée' | 'annulée'
+  total_amount: number
   notes: string | null
   created_at: string
   updated_at: string
@@ -71,10 +62,13 @@ export interface Order {
 export interface OrderLine {
   id: string
   order_id: string
-  product_id: string
+  product_id: string | null
+  product_name: string
+  product_sku: string
   quantity: number
   unit_price: number
   line_total: number
+  created_at: string
 }
 
 // Types avec relations pour les requêtes

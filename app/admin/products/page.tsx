@@ -22,13 +22,10 @@ export default function AdminProductsPage() {
     name: '',
     category: 'Soins Visage' as 'Soins Visage' | 'Soins Corps & Cheveux' | 'Hôtel & Spa',
     description: '',
-    ean: '',
-    price_ht: '',
-    price_ttc: '',
-    price_discounted: '',
-    discount: '',
-    pcb: '',
-    is_recommended: false,
+    pcb_price: '',
+    retail_price: '',
+    vat_rate: '20',
+    stock_quantity: '0',
     is_active: true,
     image_url: '',
   })
@@ -92,13 +89,10 @@ export default function AdminProductsPage() {
         name: product.name,
         category: product.category,
         description: product.description || '',
-        ean: product.ean || '',
-        price_ht: product.price_ht.toString(),
-        price_ttc: product.price_ttc.toString(),
-        price_discounted: product.price_discounted?.toString() || product.price_ttc.toString(),
-        discount: product.discount?.toString() || '',
-        pcb: product.pcb.toString(),
-        is_recommended: product.is_recommended,
+        pcb_price: product.pcb_price.toString(),
+        retail_price: product.retail_price.toString(),
+        vat_rate: product.vat_rate.toString(),
+        stock_quantity: product.stock_quantity.toString(),
         is_active: product.is_active,
         image_url: product.image_url || '',
       })
@@ -109,13 +103,10 @@ export default function AdminProductsPage() {
         name: '',
         category: 'Soins Visage',
         description: '',
-        ean: '',
-        price_ht: '',
-        price_ttc: '',
-        price_discounted: '',
-        discount: '',
-        pcb: '6',
-        is_recommended: false,
+        pcb_price: '',
+        retail_price: '',
+        vat_rate: '20',
+        stock_quantity: '0',
         is_active: true,
         image_url: '',
       })
@@ -132,13 +123,10 @@ export default function AdminProductsPage() {
         name: formData.name,
         category: formData.category,
         description: formData.description || null,
-        ean: formData.ean || null,
-        price_ht: parseFloat(formData.price_ht),
-        price_ttc: parseFloat(formData.price_ttc),
-        price_discounted: parseFloat(formData.price_discounted || formData.price_ttc),
-        discount: formData.discount ? parseFloat(formData.discount) : null,
-        pcb: parseInt(formData.pcb),
-        is_recommended: formData.is_recommended,
+        pcb_price: parseFloat(formData.pcb_price),
+        retail_price: parseFloat(formData.retail_price),
+        vat_rate: parseFloat(formData.vat_rate),
+        stock_quantity: parseInt(formData.stock_quantity),
         is_active: formData.is_active,
         image_url: formData.image_url || null,
       }
@@ -226,9 +214,9 @@ export default function AdminProductsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix HT</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix TTC</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PCB</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix PCB</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix vente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -246,13 +234,13 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.price_ht.toFixed(2)} €
+                      {product.pcb_price.toFixed(2)} €
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.price_ttc.toFixed(2)} €
+                      {product.retail_price.toFixed(2)} €
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.pcb}
+                      {product.stock_quantity}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
@@ -359,79 +347,55 @@ export default function AdminProductsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        EAN
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.ean}
-                        onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        PCB (unités/carton) *
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        value={formData.pcb}
-                        onChange={(e) => setFormData({ ...formData, pcb: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prix HT *
+                        Prix PCB *
                       </label>
                       <input
                         type="number"
                         step="0.01"
                         required
-                        value={formData.price_ht}
-                        onChange={(e) => setFormData({ ...formData, price_ht: e.target.value })}
+                        value={formData.pcb_price}
+                        onChange={(e) => setFormData({ ...formData, pcb_price: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prix TTC *
+                        Prix de vente *
                       </label>
                       <input
                         type="number"
                         step="0.01"
                         required
-                        value={formData.price_ttc}
-                        onChange={(e) => setFormData({ ...formData, price_ttc: e.target.value })}
+                        value={formData.retail_price}
+                        onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prix remisé
+                        Taux de TVA (%) *
                       </label>
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.price_discounted}
-                        onChange={(e) => setFormData({ ...formData, price_discounted: e.target.value })}
+                        required
+                        value={formData.vat_rate}
+                        onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Remise (%)
+                        Stock *
                       </label>
                       <input
                         type="number"
-                        step="0.01"
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                        required
+                        value={formData.stock_quantity}
+                        onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23]"
                       />
                     </div>
@@ -449,19 +413,7 @@ export default function AdminProductsPage() {
                       />
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_recommended}
-                          onChange={(e) => setFormData({ ...formData, is_recommended: e.target.checked })}
-                          className="rounded border-gray-300 text-[#6B8E23] focus:ring-[#6B8E23]"
-                        />
-                        <span className="text-sm text-gray-700">Produit recommandé</span>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 md:col-span-2">
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
