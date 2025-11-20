@@ -170,22 +170,28 @@ function NewOrderForm() {
         if (!item.product.pcb_price) {
           throw new Error(`Le produit ${item.product.name} n'a pas de prix PCB`)
         }
+        const unitPrice = Number(item.product.pcb_price)
+        const lineTotal = Number(unitPrice * item.quantity)
+
         return {
           order_id: order.id,
           product_id: item.product.id,
           product_name: item.product.name,
           product_sku: item.product.sku,
-          quantity: item.quantity,
-          unit_price_ht: item.product.pcb_price,
-          line_total: item.product.pcb_price * item.quantity
+          quantity: Number(item.quantity),
+          unit_price_ht: unitPrice,
+          line_total: lineTotal
         }
       })
 
       console.log('Order lines to insert:', orderLines)
 
-      const { error: linesError } = await supabase
+      const { data: insertedLines, error: linesError } = await supabase
         .from('order_lines')
         .insert(orderLines)
+        .select()
+
+      console.log('Insert result:', { insertedLines, linesError })
 
       if (linesError) throw linesError
 
