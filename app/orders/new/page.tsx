@@ -170,17 +170,25 @@ function NewOrderForm() {
         if (!item.product.pcb_price) {
           throw new Error(`Le produit ${item.product.name} n'a pas de prix PCB`)
         }
-        const unitPrice = Number(item.product.pcb_price)
-        const lineTotal = Number(unitPrice * item.quantity)
+        const unitPriceHT = Number(item.product.pcb_price)
+        const unitPriceTTC = Number(item.product.retail_price)
+        const vatRate = Number(item.product.vat_rate) / 100
+        const quantity = Number(item.quantity)
+
+        const lineTotalHT = Number(unitPriceHT * quantity)
+        const lineTotalTTC = Number(unitPriceTTC * quantity)
 
         return {
           order_id: order.id,
           product_id: item.product.id,
           product_name: item.product.name,
           product_sku: item.product.sku,
-          quantity: Number(item.quantity),
-          unit_price_ht: unitPrice,
-          line_total: lineTotal
+          quantity: quantity,
+          unit_price_ht: unitPriceHT,
+          unit_price_ttc: unitPriceTTC,
+          line_total_ht: lineTotalHT,
+          line_total_ttc: lineTotalTTC,
+          line_total: lineTotalHT  // Pour compatibilité
         }
       })
 
