@@ -1,14 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { User } from '@/types/database.types'
+import { User, Pharmacy } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
 import { ArrowLeft, Save } from 'lucide-react'
 
-export default function NewPharmacyPage() {
+export default function EditPharmacyPage() {
   const router = useRouter()
+  const params = useParams()
+  const pharmacyId = params.id as string
+
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -27,10 +30,10 @@ export default function NewPharmacyPage() {
   })
 
   useEffect(() => {
-    loadUser()
-  }, [])
+    loadData()
+  }, [pharmacyId])
 
-  async function loadUser() {
+  async function loadData() {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) {
@@ -46,10 +49,35 @@ export default function NewPharmacyPage() {
 
       if (userData) {
         setUser(userData)
-        // Pré-remplir le secteur avec celui du commercial
-        if (userData.role === 'commercial' && userData.sector) {
-          setFormData(prev => ({ ...prev, sector: userData.sector }))
-        }
+      }
+
+      // Charger la pharmacie
+      const { data: pharmacyData, error } = await supabase
+        .from('pharmacies')
+        .select('*')
+        .eq('id', pharmacyId)
+        .single()
+
+      if (error) {
+        console.error('Erreur:', error)
+        alert('Erreur lors du chargement de la pharmacie')
+        router.push('/pharmacies')
+        return
+      }
+
+      if (pharmacyData) {
+        setFormData({
+          name: pharmacyData.name || '',
+          contact_name: pharmacyData.contact_name || '',
+          address: pharmacyData.address || '',
+          postal_code: pharmacyData.postal_code || '',
+          city: pharmacyData.city || '',
+          phone: pharmacyData.phone || '',
+          email: pharmacyData.email || '',
+          sector: pharmacyData.sector || '',
+          status: pharmacyData.status || 'prospect',
+          discount_rate: pharmacyData.discount_rate || 21,
+        })
       }
     } catch (error) {
       console.error('Erreur:', error)
@@ -66,19 +94,27 @@ export default function NewPharmacyPage() {
     try {
       const { error } = await supabase
         .from('pharmacies')
-        .insert({
-          ...formData,
-          assigned_commercial_id: user.role === 'commercial' ? user.id : null,
-          first_contact_date: new Date().toISOString(),
+        .update({
+          name: formData.name,
+          contact_name: formData.contact_name || null,
+          address: formData.address,
+          postal_code: formData.postal_code,
+          city: formData.city,
+          phone: formData.phone || null,
+          email: formData.email || null,
+          sector: formData.sector,
+          status: formData.status,
+          discount_rate: formData.discount_rate,
         })
+        .eq('id', pharmacyId)
 
       if (error) throw error
 
-      alert('Pharmacie créée avec succès !')
-      router.push('/pharmacies')
+      alert('Pharmacie modifiée avec succès !')
+      router.push(`/pharmacies/${pharmacyId}`)
     } catch (error: any) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la création de la pharmacie: ' + error.message)
+      alert('Erreur lors de la modification de la pharmacie: ' + error.message)
     } finally {
       setSubmitting(false)
     }
@@ -93,8 +129,8 @@ export default function NewPharmacyPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#6B8E23]">Nouvelle Pharmacie</h1>
-            <p className="text-gray-600 mt-2">Ajouter une pharmacie à votre portefeuille</p>
+            <h1 className="text-3xl font-bold text-[#6B8E23]">Modifier la Pharmacie</h1>
+            <p className="text-gray-600 mt-2">Mettre à jour les informations de la pharmacie</p>
           </div>
           <button
             onClick={() => router.back()}
@@ -274,7 +310,7 @@ export default function NewPharmacyPage() {
               className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-2 rounded-lg hover:bg-[#5a7a1d] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5" />
-              <span>{submitting ? 'Enregistrement...' : 'Enregistrer'}</span>
+              <span>{submitting ? 'Enregistrement...' : 'Enregistrer les modifications'}</span>
             </button>
           </div>
         </form>

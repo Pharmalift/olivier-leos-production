@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Pharmacy, User, Order, PharmacyNote } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { MapPin, Phone, Mail, Calendar, FileText, ShoppingCart } from 'lucide-react'
+import { MapPin, Phone, Mail, Calendar, FileText, ShoppingCart, Edit } from 'lucide-react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -121,13 +121,22 @@ export default function PharmacyDetailPage() {
             <h1 className="text-3xl font-bold text-[#6B8E23]">{pharmacy.name}</h1>
             <p className="text-gray-600 mt-2">Fiche complète de la pharmacie</p>
           </div>
-          <Link
-            href={`/orders/new?pharmacy=${pharmacy.id}`}
-            className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] transition-colors"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            <span>Nouvelle commande</span>
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href={`/pharmacies/${pharmacy.id}/edit`}
+              className="flex items-center space-x-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <Edit className="w-5 h-5" />
+              <span>Modifier</span>
+            </Link>
+            <Link
+              href={`/orders/new?pharmacy=${pharmacy.id}`}
+              className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] transition-colors"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span>Nouvelle commande</span>
+            </Link>
+          </div>
         </div>
 
         {/* Informations */}
@@ -135,6 +144,15 @@ export default function PharmacyDetailPage() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Coordonnées</h2>
             <div className="space-y-3">
+              {pharmacy.contact_name && (
+                <div className="flex items-center">
+                  <FileText className="w-5 h-5 text-gray-400 mr-3" />
+                  <div>
+                    <span className="text-gray-600">Contact: </span>
+                    <span className="text-gray-900 font-medium">{pharmacy.contact_name}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start">
                 <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
                 <div>
@@ -172,6 +190,13 @@ export default function PharmacyDetailPage() {
                   }`}>
                     {pharmacy.status}
                   </span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <FileText className="w-5 h-5 text-gray-400 mr-3" />
+                <div>
+                  <span className="text-gray-600">Remise: </span>
+                  <span className="text-green-700 font-bold">{pharmacy.discount_rate}%</span>
                 </div>
               </div>
             </div>

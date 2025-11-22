@@ -26,6 +26,7 @@ export interface Product {
 export interface Pharmacy {
   id: string
   name: string
+  contact_name: string | null
   address: string
   postal_code: string
   city: string
