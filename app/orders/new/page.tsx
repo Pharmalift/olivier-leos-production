@@ -4,12 +4,28 @@ import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Pharmacy, Product, User } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { ChevronRight, ChevronLeft, Check, ShoppingCart, Trash2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Check, ShoppingCart, Trash2, Plus, Minus, AlertCircle, Package } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface CartItem {
   product: Product
   quantity: number
+}
+
+// Données d'implantation type
+const IMPLANTATION_DEFAULTS: Record<string, number> = {
+  'HN100OL20': 6,  // Huile Nettoyante 100ml
+  'BT100OL20': 6,  // Brume Tonique 100ml
+  'SP030OL20': 6,  // Sérum Perlé 30ml
+  'CC050OL20': 6,  // Crème Confort 50ml
+  'EM075OL20': 6,  // Exfoliant Moussant 75ml
+  'MH075OL20': 6,  // Masque Hydratant 75ml
+  'BR005OL20': 12, // Beurre Réconfort 5g
+  'HS100OL20': 6,  // Huile Sèche Sublime 100ml
+  'SS080OL25': 12, // Savon Olivier Verveine 80g
+  'SE290OL25': 6,  // Savon Essentiel Mains 290ml
+  'ER500OL25': 6,  // Éco-recharge Savon 500ml
+  'SH290OL25': 6   // Shampooing 290ml
 }
 
 function NewOrderForm() {
@@ -19,14 +35,16 @@ function NewOrderForm() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(true)
 
-  // Étape 1: Sélection pharmacie
+  // Étape 1: Sélection pharmacie et type de commande
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([])
   const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null)
+  const [orderType, setOrderType] = useState<'implantation' | 'reassort'>('reassort')
 
   // Étape 2: Ajout produits
   const [products, setProducts] = useState<Product[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
   // Étape 3: Notes
   const [notes, setNotes] = useState('')
@@ -96,58 +114,115 @@ function NewOrderForm() {
     }
   }
 
+  function proceedToStep2() {
+    if (!selectedPharmacy) return
+
+    // Si commande d'implantation, pré-remplir le panier
+    if (orderType === 'implantation') {
+      const implantationCart: CartItem[] = []
+      products.forEach(product => {
+        const defaultQty = IMPLANTATION_DEFAULTS[product.sku]
+        if (defaultQty) {
+          implantationCart.push({ product, quantity: defaultQty })
+        }
+      })
+      setCart(implantationCart)
+    } else {
+      setCart([])
+    }
+
+    setStep(2)
+  }
+
   function addToCart(product: Product) {
     const existing = cart.find(item => item.product.id === product.id)
     if (existing) {
-      setCart(cart.map(item =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ))
+      updateQuantity(product.id, existing.quantity + 1)
     } else {
-      setCart([...cart, { product, quantity: 1 }])
+      setCart([...cart, { product, quantity: product.minimum_order_quantity }])
     }
   }
 
   function updateQuantity(productId: string, quantity: number) {
     if (quantity <= 0) {
       setCart(cart.filter(item => item.product.id !== productId))
+      // Remove validation error when removing product
+      const newErrors = { ...validationErrors }
+      delete newErrors[productId]
+      setValidationErrors(newErrors)
     } else {
       setCart(cart.map(item =>
         item.product.id === productId ? { ...item, quantity } : item
       ))
+      // Validate minimum
+      const product = cart.find(item => item.product.id === productId)?.product
+      if (product && quantity > 0 && quantity < product.minimum_order_quantity) {
+        setValidationErrors({
+          ...validationErrors,
+          [productId]: `⚠️ Quantité insuffisante - Minimum : ${product.minimum_order_quantity} unités`
+        })
+      } else {
+        const newErrors = { ...validationErrors }
+        delete newErrors[productId]
+        setValidationErrors(newErrors)
+      }
     }
   }
 
   function removeFromCart(productId: string) {
     setCart(cart.filter(item => item.product.id !== productId))
+    const newErrors = { ...validationErrors }
+    delete newErrors[productId]
+    setValidationErrors(newErrors)
+  }
+
+  function calculateDiscountedPrice(price: number, discountRate: number): number {
+    return price * (1 - discountRate / 100)
   }
 
   function calculateTotal() {
-    return cart.reduce((sum, item) => sum + (item.product.pcb_price * item.quantity), 0)
+    if (!selectedPharmacy) return 0
+    const totalHT = cart.reduce((sum, item) => sum + (item.product.pcb_price * item.quantity), 0)
+    return calculateDiscountedPrice(totalHT, selectedPharmacy.discount_rate)
+  }
+
+  function validateCart(): boolean {
+    const errors: Record<string, string> = {}
+    let hasErrors = false
+
+    cart.forEach(item => {
+      if (item.quantity > 0 && item.quantity < item.product.minimum_order_quantity) {
+        errors[item.product.id] = `⚠️ Quantité insuffisante - Minimum : ${item.product.minimum_order_quantity} unités`
+        hasErrors = true
+      }
+    })
+
+    setValidationErrors(errors)
+
+    if (hasErrors) {
+      alert('Certains produits ne respectent pas les quantités minimales de commande. Veuillez corriger avant de continuer.')
+    }
+
+    return !hasErrors
+  }
+
+  function proceedToStep3() {
+    if (validateCart()) {
+      setStep(3)
+    }
   }
 
   async function submitOrder() {
     if (!selectedPharmacy || !user || cart.length === 0) return
+    if (!validateCart()) return
 
     setSubmitting(true)
     try {
-      // Debug: Vérifier le contenu du panier AVANT l'envoi
-      console.log('🛒 Panier avant soumission:', cart)
-      cart.forEach((item, index) => {
-        console.log(`  Produit ${index + 1}:`, {
-          name: item.product.name,
-          sku: item.product.sku,
-          pcb_price: item.product.pcb_price,
-          quantity: item.quantity
-        })
-      })
-
       // Générer numéro de commande
       const orderNumber = `CMD-${Date.now()}`
 
       // Calculer les totaux
-      const totalHT = calculateTotal()
+      const totalHT = cart.reduce((sum, item) => sum + (item.product.pcb_price * item.quantity), 0)
       const discountRate = selectedPharmacy.discount_rate || 0
       const discountAmount = (totalHT * discountRate) / 100
       const totalAfterDiscount = totalHT - discountAmount
@@ -165,6 +240,7 @@ function NewOrderForm() {
           commercial_id: user.id,
           order_date: new Date().toISOString(),
           status: 'en_attente',
+          order_type: orderType,
           total_before_discount: totalHT,
           discount_rate: discountRate,
           discount_amount: discountAmount,
@@ -179,17 +255,13 @@ function NewOrderForm() {
 
       // Créer les lignes de commande
       const orderLines = cart.map(item => {
-        console.log('Product in cart:', item.product)
-        if (!item.product.pcb_price) {
-          throw new Error(`Le produit ${item.product.name} n'a pas de prix PCB`)
-        }
         const unitPriceHT = Number(item.product.pcb_price)
+        const discountedUnitPrice = calculateDiscountedPrice(unitPriceHT, discountRate)
         const unitPriceTTC = Number(item.product.retail_price)
-        const vatRate = Number(item.product.vat_rate) / 100
         const quantity = Number(item.quantity)
 
-        const lineTotalHT = Number(unitPriceHT * quantity)
-        const lineTotalTTC = Number(unitPriceTTC * quantity)
+        const lineTotalHT = discountedUnitPrice * quantity
+        const lineTotalTTC = unitPriceTTC * quantity
 
         return {
           order_id: order.id,
@@ -197,30 +269,24 @@ function NewOrderForm() {
           product_name: item.product.name,
           product_sku: item.product.sku,
           quantity: quantity,
-          unit_price_ht: unitPriceHT,
+          unit_price_ht: discountedUnitPrice,
           unit_price_ttc: unitPriceTTC,
           line_total_ht: lineTotalHT,
           line_total_ttc: lineTotalTTC,
-          line_total: lineTotalHT  // Pour compatibilité
+          line_total: lineTotalHT
         }
       })
 
-      console.log('Order lines to insert:', orderLines)
-
-      const { data: insertedLines, error: linesError } = await supabase
+      const { error: linesError } = await supabase
         .from('order_lines')
         .insert(orderLines)
-        .select()
-
-      console.log('Insert result:', { insertedLines, linesError })
 
       if (linesError) throw linesError
 
-      // Envoyer les emails en arrière-plan (ne pas attendre)
+      // Envoyer les emails en arrière-plan
       if (selectedPharmacy.email) {
         sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
           console.error('Erreur lors de l\'envoi des emails:', error)
-          // Ne pas bloquer la création de la commande
         })
       }
 
@@ -236,7 +302,6 @@ function NewOrderForm() {
 
   async function sendOrderEmails(orderId: string, orderNumber: string, pharmacyEmail: string) {
     try {
-      // Appeler l'API pour envoyer les emails
       const response = await fetch('/api/send-order-emails', {
         method: 'POST',
         headers: {
@@ -253,9 +318,6 @@ function NewOrderForm() {
         const error = await response.json()
         throw new Error(error.message || 'Erreur lors de l\'envoi des emails')
       }
-
-      const result = await response.json()
-      console.log('Emails envoyés:', result)
     } catch (error) {
       console.error('Erreur sendOrderEmails:', error)
       throw error
@@ -270,6 +332,8 @@ function NewOrderForm() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const cartProductIds = new Set(cart.map(item => item.product.id))
 
   return (
     <AppLayout user={user}>
@@ -291,7 +355,7 @@ function NewOrderForm() {
                 </div>
                 <div className="ml-3">
                   <div className={`font-medium ${step >= s ? 'text-[#6B8E23]' : 'text-gray-500'}`}>
-                    {s === 1 && 'Pharmacie'}
+                    {s === 1 && 'Pharmacie & Type'}
                     {s === 2 && 'Produits'}
                     {s === 3 && 'Récapitulatif'}
                   </div>
@@ -302,30 +366,81 @@ function NewOrderForm() {
           </div>
         </div>
 
-        {/* Étape 1: Sélection pharmacie */}
+        {/* Étape 1: Sélection pharmacie et type de commande */}
         {step === 1 && (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Sélectionner une pharmacie</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pharmacies.map((pharmacy) => (
-                <div
-                  key={pharmacy.id}
-                  onClick={() => setSelectedPharmacy(pharmacy)}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    selectedPharmacy?.id === pharmacy.id
-                      ? 'border-[#6B8E23] bg-green-50'
-                      : 'border-gray-200 hover:border-[#6B8E23]'
-                  }`}
-                >
-                  <div className="font-semibold text-gray-900">{pharmacy.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">{pharmacy.city}</div>
-                  <div className="text-sm text-gray-500">{pharmacy.sector}</div>
-                </div>
-              ))}
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Sélectionner une pharmacie</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {pharmacies.map((pharmacy) => (
+                  <div
+                    key={pharmacy.id}
+                    onClick={() => setSelectedPharmacy(pharmacy)}
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      selectedPharmacy?.id === pharmacy.id
+                        ? 'border-[#6B8E23] bg-green-50'
+                        : 'border-gray-200 hover:border-[#6B8E23]'
+                    }`}
+                  >
+                    <div className="font-semibold text-gray-900">{pharmacy.name}</div>
+                    <div className="text-sm text-gray-600 mt-1">{pharmacy.city}</div>
+                    <div className="text-sm text-gray-500">{pharmacy.sector}</div>
+                    <div className="text-sm font-medium text-[#6B8E23] mt-2">
+                      Remise: {pharmacy.discount_rate}%
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-6 flex justify-end">
+
+            {selectedPharmacy && (
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-4">Type de commande</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setOrderType('implantation')}
+                    className={`p-6 border-2 rounded-lg cursor-pointer transition-colors ${
+                      orderType === 'implantation'
+                        ? 'border-[#6B8E23] bg-green-50'
+                        : 'border-gray-200 hover:border-[#6B8E23]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <Package className="w-6 h-6 text-[#6B8E23]" />
+                      <div className="font-semibold text-lg text-gray-900">Commande d'implantation</div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p className="mb-2">Première commande pour une nouvelle pharmacie</p>
+                      <p className="font-medium text-[#6B8E23]">✓ Gamme pré-remplie automatiquement</p>
+                      <p className="font-medium text-gray-700 mt-2">Montant indicatif: ~1 263 € HT</p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setOrderType('reassort')}
+                    className={`p-6 border-2 rounded-lg cursor-pointer transition-colors ${
+                      orderType === 'reassort'
+                        ? 'border-[#6B8E23] bg-green-50'
+                        : 'border-gray-200 hover:border-[#6B8E23]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <ShoppingCart className="w-6 h-6 text-[#6B8E23]" />
+                      <div className="font-semibold text-lg text-gray-900">Commande de réassort</div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p className="mb-2">Commande libre pour réapprovisionner</p>
+                      <p className="font-medium text-[#6B8E23]">✓ Sélection manuelle des produits</p>
+                      <p className="font-medium text-gray-700 mt-2">Minimums de commande à respecter</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end">
               <button
-                onClick={() => setStep(2)}
+                onClick={proceedToStep2}
                 disabled={!selectedPharmacy}
                 className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -337,10 +452,20 @@ function NewOrderForm() {
         )}
 
         {/* Étape 2: Ajout produits */}
-        {step === 2 && (
+        {step === 2 && selectedPharmacy && (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Ajouter des produits</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  {orderType === 'implantation' ? 'Gamme d\'implantation' : 'Ajouter des produits'}
+                </h2>
+                {orderType === 'implantation' && (
+                  <span className="text-sm text-gray-600">
+                    Vous pouvez modifier les quantités ou ajouter d'autres produits
+                  </span>
+                )}
+              </div>
+
               <input
                 type="text"
                 placeholder="Rechercher un produit..."
@@ -348,58 +473,143 @@ function NewOrderForm() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23] focus:border-transparent mb-4"
               />
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="font-semibold text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-600">{product.sku}</div>
-                    <div className="text-lg font-bold text-[#6B8E23] mt-2">{product.pcb_price.toFixed(2)} €</div>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="mt-3 w-full bg-[#6B8E23] text-white py-2 rounded-lg hover:bg-[#5a7a1d] transition-colors"
-                    >
-                      <ShoppingCart className="w-4 h-4 inline mr-2" />
-                      Ajouter
-                    </button>
-                  </div>
-                ))}
+                {filteredProducts.map((product) => {
+                  const isInCart = cartProductIds.has(product.id)
+                  const discountedPrice = calculateDiscountedPrice(product.pcb_price, selectedPharmacy.discount_rate)
+
+                  return (
+                    <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="font-semibold text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-600">{product.sku}</div>
+
+                      <div className="mt-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Prix HT brut:</span>
+                          <span className="text-sm line-through text-gray-400">{product.pcb_price.toFixed(2)} €</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-green-700 font-medium">Remisé (-{selectedPharmacy.discount_rate}%):</span>
+                          <span className="text-lg font-bold text-[#6B8E23]">{discountedPrice.toFixed(2)} €</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2">
+                        <span className="inline-block px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded">
+                          Minimum: {product.minimum_order_quantity} unités
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => addToCart(product)}
+                        disabled={isInCart}
+                        className={`mt-3 w-full py-2 rounded-lg transition-colors ${
+                          isInCart
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : 'bg-[#6B8E23] text-white hover:bg-[#5a7a1d]'
+                        }`}
+                      >
+                        {isInCart ? (
+                          <>
+                            <Check className="w-4 h-4 inline mr-2" />
+                            Dans le panier
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-4 h-4 inline mr-2" />
+                            Ajouter
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
             {/* Panier */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Panier ({cart.length})</h2>
+              <h2 className="text-xl font-semibold mb-4">Panier ({cart.length} produit{cart.length > 1 ? 's' : ''})</h2>
               {cart.length > 0 ? (
                 <div className="space-y-3">
-                  {cart.map((item) => (
-                    <div key={item.product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium">{item.product.name}</div>
-                        <div className="text-sm text-gray-600">{item.product.pcb_price.toFixed(2)} € x {item.quantity}</div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value))}
-                          className="w-20 px-2 py-1 border rounded-lg text-center"
-                        />
-                        <div className="font-bold text-[#6B8E23] w-24 text-right">
-                          {(item.product.pcb_price * item.quantity).toFixed(2)} €
+                  {cart.map((item) => {
+                    const discountedPrice = calculateDiscountedPrice(item.product.pcb_price, selectedPharmacy.discount_rate)
+                    const hasError = validationErrors[item.product.id]
+
+                    return (
+                      <div key={item.product.id} className={`p-3 border rounded-lg ${hasError ? 'border-red-300 bg-red-50' : ''}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{item.product.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {discountedPrice.toFixed(2)} € x {item.quantity} = {(discountedPrice * item.quantity).toFixed(2)} €
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Minimum: {item.product.minimum_order_quantity} unités
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center border rounded-lg">
+                              <button
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                className="p-2 hover:bg-gray-100 rounded-l-lg"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.quantity}
+                                onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value) || 0)}
+                                className="w-16 px-2 py-1 text-center border-x"
+                              />
+                              <button
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                className="p-2 hover:bg-gray-100 rounded-r-lg"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="font-bold text-[#6B8E23] w-24 text-right">
+                              {(discountedPrice * item.quantity).toFixed(2)} €
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(item.product.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        {hasError && (
+                          <div className="mt-2 text-sm text-red-700 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            {hasError}
+                          </div>
+                        )}
                       </div>
+                    )
+                  })}
+
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-lg">
+                      <span className="font-medium">Total HT (avec remise {selectedPharmacy.discount_rate}%):</span>
+                      <span className="font-bold text-[#6B8E23]">{calculateTotal().toFixed(2)} €</span>
                     </div>
-                  ))}
-                  <div className="border-t pt-3 flex justify-between items-center text-xl font-bold">
-                    <span>Total:</span>
-                    <span className="text-[#6B8E23]">{calculateTotal().toFixed(2)} €</span>
+                    <div className={`flex justify-between text-sm ${
+                      calculateTotal() >= 300 ? 'text-green-700' : 'text-orange-700'
+                    }`}>
+                      <span>Frais de port:</span>
+                      <span className="font-medium">
+                        {calculateTotal() >= 300 ? 'OFFERTS' : '9.90 €'}
+                      </span>
+                    </div>
+                    {calculateTotal() < 300 && (
+                      <div className="text-xs text-gray-600 text-right">
+                        Plus que {(300 - calculateTotal()).toFixed(2)} € pour la livraison offerte
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -416,7 +626,7 @@ function NewOrderForm() {
                 <span>Précédent</span>
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={proceedToStep3}
                 disabled={cart.length === 0}
                 className="flex items-center space-x-2 bg-[#6B8E23] text-white px-6 py-3 rounded-lg hover:bg-[#5a7a1d] disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -428,91 +638,87 @@ function NewOrderForm() {
         )}
 
         {/* Étape 3: Récapitulatif */}
-        {step === 3 && (
+        {step === 3 && selectedPharmacy && (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h2 className="text-xl font-semibold mb-4">Récapitulatif</h2>
 
               <div className="mb-6">
+                <h3 className="font-semibold mb-2">Type de commande</h3>
+                <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-2">
+                  {orderType === 'implantation' ? (
+                    <>
+                      <Package className="w-5 h-5 text-[#6B8E23]" />
+                      <span className="font-medium">Commande d'implantation</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5 text-[#6B8E23]" />
+                      <span className="font-medium">Commande de réassort</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-6">
                 <h3 className="font-semibold mb-2">Pharmacie</h3>
                 <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="font-medium">{selectedPharmacy?.name}</div>
-                  <div className="text-sm text-gray-600">{selectedPharmacy?.city}</div>
+                  <div className="font-medium">{selectedPharmacy.name}</div>
+                  <div className="text-sm text-gray-600">{selectedPharmacy.city}</div>
+                  <div className="text-sm text-[#6B8E23] font-medium mt-1">
+                    Taux de remise: {selectedPharmacy.discount_rate}%
+                  </div>
                 </div>
               </div>
 
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Produits ({cart.length})</h3>
                 <div className="space-y-2">
-                  {cart.map((item) => (
-                    <div key={item.product.id} className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium">{item.product.name}</div>
-                        <div className="text-sm text-gray-600">Quantité: {item.quantity}</div>
+                  {cart.map((item) => {
+                    const discountedPrice = calculateDiscountedPrice(item.product.pcb_price, selectedPharmacy.discount_rate)
+                    return (
+                      <div key={item.product.id} className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">{item.product.name}</div>
+                          <div className="text-sm text-gray-600">
+                            {discountedPrice.toFixed(2)} € x {item.quantity}
+                          </div>
+                        </div>
+                        <div className="font-bold">{(discountedPrice * item.quantity).toFixed(2)} €</div>
                       </div>
-                      <div className="font-bold">{(item.product.pcb_price * item.quantity).toFixed(2)} €</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
-                {/* Calcul des totaux avec remise et frais de port */}
+                {/* Calcul des totaux */}
                 <div className="mt-4 space-y-3">
                   <div className="p-3 bg-gray-50 rounded-lg flex justify-between text-lg">
-                    <span className="font-medium">Total HT avant remise:</span>
+                    <span className="font-medium">Total HT (après remise {selectedPharmacy.discount_rate}%):</span>
                     <span className="font-bold">{calculateTotal().toFixed(2)} €</span>
                   </div>
 
-                  {selectedPharmacy && selectedPharmacy.discount_rate > 0 && (
-                    <div className="p-3 bg-green-50 rounded-lg flex justify-between text-lg text-green-700">
-                      <span className="font-medium">Remise ({selectedPharmacy.discount_rate}%):</span>
-                      <span className="font-bold">- {((calculateTotal() * selectedPharmacy.discount_rate) / 100).toFixed(2)} €</span>
-                    </div>
-                  )}
-
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between text-lg">
-                    <span className="font-medium">Total HT après remise:</span>
+                  <div className={`p-3 rounded-lg flex justify-between text-lg ${
+                    calculateTotal() < 300
+                      ? 'bg-orange-50 text-orange-700'
+                      : 'bg-green-50 text-green-700'
+                  }`}>
+                    <span className="font-medium">
+                      Frais de port:
+                      {calculateTotal() >= 300 && (
+                        <span className="text-sm ml-2">(Offerts dès 300€)</span>
+                      )}
+                    </span>
                     <span className="font-bold">
-                      {selectedPharmacy
-                        ? (calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100).toFixed(2)
-                        : calculateTotal().toFixed(2)
-                      } €
+                      {calculateTotal() < 300 ? '9.90 €' : 'OFFERTS'}
                     </span>
                   </div>
 
-                  {selectedPharmacy && (
-                    <>
-                      <div className={`p-3 rounded-lg flex justify-between text-lg ${
-                        (calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) < 300
-                          ? 'bg-orange-50 text-orange-700'
-                          : 'bg-green-50 text-green-700'
-                      }`}>
-                        <span className="font-medium">
-                          Frais de port:
-                          {(calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) >= 300 && (
-                            <span className="text-sm ml-2">(Offerts dès 300€)</span>
-                          )}
-                        </span>
-                        <span className="font-bold">
-                          {(calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) < 300
-                            ? '9.90 €'
-                            : 'OFFERTS'
-                          }
-                        </span>
-                      </div>
-
-                      <div className="p-4 bg-[#6B8E23] text-white rounded-lg flex justify-between text-xl font-bold">
-                        <span>TOTAL FINAL:</span>
-                        <span>
-                          {(() => {
-                            const totalAfterDiscount = calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100
-                            const shipping = totalAfterDiscount < 300 ? 9.90 : 0
-                            return (totalAfterDiscount + shipping).toFixed(2)
-                          })()
-                          } €
-                        </span>
-                      </div>
-                    </>
-                  )}
+                  <div className="p-4 bg-[#6B8E23] text-white rounded-lg flex justify-between text-xl font-bold">
+                    <span>TOTAL FINAL:</span>
+                    <span>
+                      {(calculateTotal() + (calculateTotal() < 300 ? 9.90 : 0)).toFixed(2)} €
+                    </span>
+                  </div>
                 </div>
               </div>
 

@@ -19,6 +19,7 @@ export interface Product {
   stock_quantity: number
   is_active: boolean
   image_url: string | null
+  minimum_order_quantity: number
   created_at: string
   updated_at: string
 }
@@ -55,6 +56,7 @@ export interface Order {
   commercial_id: string | null
   order_date: string
   status: 'en_attente' | 'validée' | 'expédiée' | 'livrée' | 'annulée'
+  order_type: 'implantation' | 'reassort'
   total_amount: number
   total_before_discount: number
   discount_rate: number
