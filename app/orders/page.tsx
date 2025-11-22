@@ -47,12 +47,12 @@ export default function OrdersPage() {
           .select(`
             *,
             pharmacy:pharmacies(name, city),
-            commercial:users!orders_user_id_fkey(full_name)
+            commercial:users!orders_commercial_id_fkey(full_name)
           `)
           .order('order_date', { ascending: false })
 
         if (userData.role === 'commercial') {
-          query = query.eq('user_id', userData.id)
+          query = query.eq('commercial_id', userData.id)
         }
 
         const { data: ordersData } = await query
@@ -137,12 +137,11 @@ export default function OrdersPage() {
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23] focus:border-transparent"
               >
                 <option value="all">Tous statuts</option>
-                <option value="draft">Brouillon</option>
-                <option value="pending">En attente</option>
-                <option value="confirmed">Confirmée</option>
-                <option value="shipped">Expédiée</option>
-                <option value="delivered">Livrée</option>
-                <option value="cancelled">Annulée</option>
+                <option value="en_attente">En attente</option>
+                <option value="validée">Validée</option>
+                <option value="expédiée">Expédiée</option>
+                <option value="livrée">Livrée</option>
+                <option value="annulée">Annulée</option>
               </select>
             </div>
 
@@ -192,9 +191,13 @@ export default function OrdersPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr
+                    key={order.id}
+                    onClick={() => router.push(`/orders/${order.id}`)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{order.order_number}</div>
+                      <div className="text-sm font-medium text-[#6B8E23] hover:underline">{order.order_number}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.order_date).toLocaleDateString('fr-FR')}
@@ -215,19 +218,18 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                        order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'pending' ? 'bg-orange-100 text-orange-800' :
-                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        order.status === 'livrée' ? 'bg-green-100 text-green-800' :
+                        order.status === 'expédiée' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'validée' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'en_attente' ? 'bg-orange-100 text-orange-800' :
+                        order.status === 'annulée' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {order.status === 'draft' ? 'Brouillon' :
-                         order.status === 'pending' ? 'En attente' :
-                         order.status === 'confirmed' ? 'Confirmée' :
-                         order.status === 'shipped' ? 'Expédiée' :
-                         order.status === 'delivered' ? 'Livrée' :
-                         order.status === 'cancelled' ? 'Annulée' :
+                        {order.status === 'en_attente' ? 'En attente' :
+                         order.status === 'validée' ? 'Validée' :
+                         order.status === 'expédiée' ? 'Expédiée' :
+                         order.status === 'livrée' ? 'Livrée' :
+                         order.status === 'annulée' ? 'Annulée' :
                          order.status}
                       </span>
                     </td>
@@ -267,7 +269,7 @@ export default function OrdersPage() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-sm text-gray-600">En attente</div>
             <div className="text-2xl font-bold text-orange-600 mt-2">
-              {filteredOrders.filter(o => o.status === 'pending').length}
+              {filteredOrders.filter(o => o.status === 'en_attente').length}
             </div>
           </div>
         </div>
