@@ -698,7 +698,7 @@ export default function OrderDetailPage() {
                     TOTAL HT :
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm font-bold text-gray-900">{totalHT.toFixed(2)} €</div>
+                    <div className="text-sm font-bold text-gray-900">{(order.total_before_discount || totalHT).toFixed(2)} €</div>
                   </td>
                   {editMode && <td></td>}
                 </tr>
@@ -718,7 +718,7 @@ export default function OrderDetailPage() {
                     TOTAL HT APRÈS REMISE :
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm font-bold text-gray-900">{((order.total_amount || totalHT) - (order.shipping_amount || 0)).toFixed(2)} €</div>
+                    <div className="text-sm font-bold text-gray-900">{((order.total_before_discount || totalHT) - (order.discount_amount || 0)).toFixed(2)} €</div>
                   </td>
                   {editMode && <td></td>}
                 </tr>
