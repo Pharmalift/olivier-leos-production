@@ -21,6 +21,25 @@ export default function OrdersPage() {
     loadData()
   }, [])
 
+  // Recharger les données quand la page redevient visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Recharger aussi au focus de la fenêtre
+    window.addEventListener('focus', loadData)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', loadData)
+    }
+  }, [])
+
   useEffect(() => {
     filterOrders()
   }, [searchTerm, statusFilter, dateFilter, orders])
