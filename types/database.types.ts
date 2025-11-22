@@ -35,6 +35,7 @@ export interface Pharmacy {
   status: 'actif' | 'inactif' | 'prospect'
   assigned_commercial_id: string | null
   first_contact_date: string | null
+  discount_rate: number
   created_at?: string
 }
 
@@ -54,6 +55,9 @@ export interface Order {
   order_date: string
   status: 'en_attente' | 'validée' | 'expédiée' | 'livrée' | 'annulée'
   total_amount: number
+  total_before_discount: number
+  discount_rate: number
+  discount_amount: number
   notes: string | null
   created_at: string
   updated_at: string

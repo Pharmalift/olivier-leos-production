@@ -22,6 +22,7 @@ export default function NewPharmacyPage() {
     email: '',
     sector: '',
     status: 'prospect' as 'actif' | 'inactif' | 'prospect',
+    discount_rate: 21,
   })
 
   useEffect(() => {
@@ -223,6 +224,22 @@ export default function NewPharmacyPage() {
                 <option value="prospect">Prospect</option>
                 <option value="actif">Client actif</option>
                 <option value="inactif">Inactif</option>
+              </select>
+            </div>
+
+            {/* Remise */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Taux de remise *
+              </label>
+              <select
+                required
+                value={formData.discount_rate}
+                onChange={(e) => setFormData({ ...formData, discount_rate: parseFloat(e.target.value) })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23] focus:border-transparent"
+              >
+                <option value={21}>21% de remise</option>
+                <option value={24}>24% de remise</option>
               </select>
             </div>
           </div>

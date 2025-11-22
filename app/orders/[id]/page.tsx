@@ -257,12 +257,20 @@ export default function OrderDetailPage() {
 
       if (insertError) throw insertError
 
-      // Recalculer et mettre à jour le total de la commande
-      const newTotal = editedLines.reduce((sum, line) => sum + line.line_total_ttc, 0)
+      // Recalculer les totaux avec remise
+      const totalHT = editedLines.reduce((sum, line) => sum + line.line_total_ht, 0)
+      const discountRate = order.pharmacy.discount_rate || 0
+      const discountAmount = (totalHT * discountRate) / 100
+      const totalAfterDiscount = totalHT - discountAmount
 
       const { error: updateError } = await supabase
         .from('orders')
-        .update({ total_amount: newTotal })
+        .update({
+          total_before_discount: totalHT,
+          discount_rate: discountRate,
+          discount_amount: discountAmount,
+          total_amount: totalAfterDiscount
+        })
         .eq('id', order.id)
 
       if (updateError) throw updateError
@@ -411,13 +419,15 @@ export default function OrderDetailPage() {
                 <span className="text-gray-600">Total HT :</span>
                 <span className="font-medium text-gray-900">{totalHT.toFixed(2)} €</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">TVA :</span>
-                <span className="font-medium text-gray-900">{totalTVA.toFixed(2)} €</span>
-              </div>
+              {order.discount_rate > 0 && (
+                <div className="flex justify-between text-green-700">
+                  <span className="font-medium">Remise ({order.discount_rate}%) :</span>
+                  <span className="font-medium">- {(order.discount_amount || 0).toFixed(2)} €</span>
+                </div>
+              )}
               <div className="flex justify-between pt-2 border-t">
-                <span className="font-semibold text-gray-900">Total TTC :</span>
-                <span className="font-bold text-[#6B8E23] text-lg">{totalTTC.toFixed(2)} €</span>
+                <span className="font-semibold text-gray-900">Total net HT :</span>
+                <span className="font-bold text-[#6B8E23] text-lg">{(order.total_amount || totalHT).toFixed(2)} €</span>
               </div>
             </div>
           </div>
@@ -516,13 +526,7 @@ export default function OrderDetailPage() {
                     Prix unitaire HT
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Prix unitaire TTC
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total HT
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total TTC
                   </th>
                   {editMode && (
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -557,13 +561,7 @@ export default function OrderDetailPage() {
                       <div className="text-sm text-gray-900">{line.unit_price_ht.toFixed(2)} €</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-gray-900">{line.unit_price_ttc.toFixed(2)} €</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm font-medium text-gray-900">{line.line_total_ht.toFixed(2)} €</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm font-semibold text-[#6B8E23]">{line.line_total_ttc.toFixed(2)} €</div>
+                      <div className="text-sm font-semibold text-[#6B8E23]">{line.line_total_ht.toFixed(2)} €</div>
                     </td>
                     {editMode && (
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -581,14 +579,31 @@ export default function OrderDetailPage() {
               </tbody>
               <tfoot className="bg-gray-50">
                 <tr>
-                  <td colSpan={editMode ? 5 : 5} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
-                    TOTAUX :
+                  <td colSpan={editMode ? 4 : 4} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
+                    TOTAL HT :
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-gray-900">{totalHT.toFixed(2)} €</div>
                   </td>
+                  {editMode && <td></td>}
+                </tr>
+                {order.discount_rate > 0 && (
+                  <tr className="bg-green-50">
+                    <td colSpan={editMode ? 4 : 4} className="px-6 py-4 text-right text-sm font-semibold text-green-700">
+                      REMISE ({order.discount_rate}%) :
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-bold text-green-700">- {(order.discount_amount || 0).toFixed(2)} €</div>
+                    </td>
+                    {editMode && <td></td>}
+                  </tr>
+                )}
+                <tr className="bg-gray-100">
+                  <td colSpan={editMode ? 4 : 4} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
+                    TOTAL NET HT :
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm font-bold text-[#6B8E23] text-lg">{totalTTC.toFixed(2)} €</div>
+                    <div className="text-sm font-bold text-[#6B8E23] text-lg">{(order.total_amount || totalHT).toFixed(2)} €</div>
                   </td>
                   {editMode && <td></td>}
                 </tr>
