@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Emails pour les notifications admin - Solène Gayet et optionnellement un autre admin
-    const soleneEmail = 'solene.gayet@lolivierdeLeos.fr'
+    const soleneEmail = 'sgayet@solcie.fr'
     const additionalAdminEmail = process.env.ADMIN_EMAIL // Optionnel
 
     // Construire la liste des destinataires admin (toujours Solène, + admin si configuré)
