@@ -44,28 +44,61 @@ export default function OrderDetailPage() {
       if (userData) {
         setUser(userData)
 
-        // Charger la commande avec toutes les relations
-        const { data: orderData, error } = await supabase
+        // Charger la commande
+        const { data: orderData, error: orderError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            pharmacy:pharmacies(*),
-            commercial:users!orders_commercial_id_fkey(*),
-            order_lines(
-              *,
-              product:products(name)
-            )
-          `)
+          .select('*')
           .eq('id', orderId)
           .single()
 
-        if (error) {
-          console.error('Erreur chargement commande:', error)
+        if (orderError) {
+          console.error('Erreur chargement commande:', orderError)
           return
         }
 
         if (orderData) {
-          setOrder(orderData as OrderWithDetails)
+          // Charger la pharmacie
+          const { data: pharmacy } = await supabase
+            .from('pharmacies')
+            .select('*')
+            .eq('id', orderData.pharmacy_id)
+            .single()
+
+          // Charger le commercial
+          const { data: commercial } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', orderData.commercial_id)
+            .single()
+
+          // Charger les lignes de commande
+          const { data: orderLines } = await supabase
+            .from('order_lines')
+            .select('*')
+            .eq('order_id', orderData.id)
+
+          // Pour chaque ligne, charger le nom du produit
+          const linesWithProducts = await Promise.all(
+            (orderLines || []).map(async (line) => {
+              const { data: product } = await supabase
+                .from('products')
+                .select('name')
+                .eq('id', line.product_id)
+                .single()
+
+              return {
+                ...line,
+                product: product || { name: line.product_name }
+              }
+            })
+          )
+
+          setOrder({
+            ...orderData,
+            pharmacy: pharmacy!,
+            commercial: commercial!,
+            order_lines: linesWithProducts
+          } as OrderWithDetails)
         }
       }
     } catch (error) {

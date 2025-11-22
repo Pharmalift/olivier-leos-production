@@ -42,23 +42,50 @@ export default function OrdersPage() {
       if (userData) {
         setUser(userData)
 
+        // Charger les commandes
         let query = supabase
           .from('orders')
-          .select(`
-            *,
-            pharmacy:pharmacies(name, city),
-            commercial:users!orders_commercial_id_fkey(full_name)
-          `)
+          .select('*')
           .order('order_date', { ascending: false })
 
         if (userData.role === 'commercial') {
           query = query.eq('commercial_id', userData.id)
         }
 
-        const { data: ordersData } = await query
+        const { data: ordersData, error: ordersError } = await query
+
+        if (ordersError) {
+          console.error('Erreur chargement commandes:', ordersError)
+          return
+        }
 
         if (ordersData) {
-          setOrders(ordersData)
+          // Charger les relations manuellement
+          const ordersWithRelations = await Promise.all(
+            ordersData.map(async (order) => {
+              // Charger la pharmacie
+              const { data: pharmacy } = await supabase
+                .from('pharmacies')
+                .select('name, city')
+                .eq('id', order.pharmacy_id)
+                .single()
+
+              // Charger le commercial
+              const { data: commercial } = await supabase
+                .from('users')
+                .select('full_name')
+                .eq('id', order.commercial_id)
+                .single()
+
+              return {
+                ...order,
+                pharmacy,
+                commercial
+              }
+            })
+          )
+
+          setOrders(ordersWithRelations)
         }
       }
     } catch (error) {
