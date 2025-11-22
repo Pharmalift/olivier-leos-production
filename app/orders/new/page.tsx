@@ -283,14 +283,15 @@ function NewOrderForm() {
 
       if (linesError) throw linesError
 
-      // Envoyer les emails en arrière-plan
+      // Envoyer les emails en arrière-plan (non-bloquant)
       if (selectedPharmacy.email) {
         sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
-          console.error('Erreur lors de l\'envoi des emails:', error)
+          console.error('⚠️ Erreur lors de l\'envoi des emails (non-bloquant):', error)
+          // L'erreur est loggée mais n'empêche pas la création de la commande
         })
       }
 
-      alert('Commande créée avec succès! Les emails de confirmation sont en cours d\'envoi.')
+      alert('✅ Commande créée avec succès!\n\nℹ️ Les emails de confirmation seront envoyés automatiquement.')
       router.push('/orders')
     } catch (error: any) {
       console.error('Erreur:', error)
