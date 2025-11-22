@@ -1,16 +1,14 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Order, User } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
 import { Search, Filter, Calendar } from 'lucide-react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function OrdersPage() {
   const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [filteredOrders, setFilteredOrders] = useState<any[]>([])
@@ -18,19 +16,10 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<string>('all')
-  const mountedRef = useRef(false)
 
   useEffect(() => {
     loadData()
-    mountedRef.current = true
   }, [])
-
-  // Recharger à chaque fois que la page devient active
-  useEffect(() => {
-    if (mountedRef.current) {
-      loadData()
-    }
-  }, [pathname, searchParams])
 
   useEffect(() => {
     filterOrders()
