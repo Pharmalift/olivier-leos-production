@@ -4,13 +4,18 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Order, OrderLine, User, Pharmacy } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2, Save, X, Plus, Trash2 } from 'lucide-react'
 import { useRouter, useParams } from 'next/navigation'
+import { Product } from '@/types/database.types'
 
 interface OrderWithDetails extends Order {
   pharmacy: Pharmacy
   commercial: User
   order_lines: (OrderLine & { product: { name: string } })[]
+}
+
+interface EditableOrderLine extends OrderLine {
+  product: { name: string }
 }
 
 export default function OrderDetailPage() {
@@ -22,10 +27,31 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editedLines, setEditedLines] = useState<EditableOrderLine[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [selectedProductId, setSelectedProductId] = useState<string>('')
 
   useEffect(() => {
     loadData()
+    loadProducts()
   }, [orderId])
+
+  async function loadProducts() {
+    try {
+      const { data: products } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('name')
+
+      if (products) {
+        setAllProducts(products)
+      }
+    } catch (error) {
+      console.error('Erreur chargement produits:', error)
+    }
+  }
 
   async function loadData() {
     try {
@@ -139,6 +165,121 @@ export default function OrderDetailPage() {
     }
   }
 
+  function startEdit() {
+    setEditedLines(JSON.parse(JSON.stringify(order?.order_lines || [])))
+    setEditMode(true)
+  }
+
+  function cancelEdit() {
+    setEditMode(false)
+    setEditedLines([])
+    setSelectedProductId('')
+  }
+
+  function updateLineQuantity(lineId: string, newQuantity: number) {
+    setEditedLines(lines => lines.map(line => {
+      if (line.id === lineId) {
+        const quantity = Math.max(1, newQuantity)
+        const lineTotalHT = line.unit_price_ht * quantity
+        const lineTotalTTC = line.unit_price_ttc * quantity
+        return {
+          ...line,
+          quantity,
+          line_total_ht: lineTotalHT,
+          line_total_ttc: lineTotalTTC,
+          line_total: lineTotalHT
+        }
+      }
+      return line
+    }))
+  }
+
+  function removeLine(lineId: string) {
+    setEditedLines(lines => lines.filter(line => line.id !== lineId))
+  }
+
+  async function addProduct() {
+    if (!selectedProductId) return
+
+    const product = allProducts.find(p => p.id === selectedProductId)
+    if (!product) return
+
+    const newLine: EditableOrderLine = {
+      id: `temp_${Date.now()}`,
+      order_id: order!.id,
+      product_id: product.id,
+      product_name: product.name,
+      product_sku: product.sku,
+      quantity: 1,
+      unit_price_ht: product.pcb_price,
+      unit_price_ttc: product.retail_price,
+      line_total_ht: product.pcb_price,
+      line_total_ttc: product.retail_price,
+      line_total: product.pcb_price,
+      created_at: new Date().toISOString(),
+      product: { name: product.name }
+    }
+
+    setEditedLines([...editedLines, newLine])
+    setSelectedProductId('')
+  }
+
+  async function saveChanges() {
+    if (!order) return
+
+    setUpdating(true)
+    try {
+      // Supprimer toutes les anciennes lignes
+      const { error: deleteError } = await supabase
+        .from('order_lines')
+        .delete()
+        .eq('order_id', order.id)
+
+      if (deleteError) throw deleteError
+
+      // Insérer les nouvelles lignes
+      const linesToInsert = editedLines.map(line => ({
+        order_id: order.id,
+        product_id: line.product_id,
+        product_name: line.product_name,
+        product_sku: line.product_sku,
+        quantity: line.quantity,
+        unit_price_ht: line.unit_price_ht,
+        unit_price_ttc: line.unit_price_ttc,
+        line_total_ht: line.line_total_ht,
+        line_total_ttc: line.line_total_ttc,
+        line_total: line.line_total
+      }))
+
+      const { error: insertError } = await supabase
+        .from('order_lines')
+        .insert(linesToInsert)
+
+      if (insertError) throw insertError
+
+      // Recalculer et mettre à jour le total de la commande
+      const newTotal = editedLines.reduce((sum, line) => sum + line.line_total_ttc, 0)
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ total_amount: newTotal })
+        .eq('id', order.id)
+
+      if (updateError) throw updateError
+
+      // Recharger les données
+      await loadData()
+      setEditMode(false)
+      setEditedLines([])
+      alert('Commande mise à jour avec succès !')
+    } catch (error: any) {
+      console.error('Erreur:', error)
+      alert('Erreur lors de la sauvegarde : ' + error.message)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   if (loading || !user || !order) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>
   }
@@ -146,11 +287,13 @@ export default function OrderDetailPage() {
   console.log('Order in render:', order)
   console.log('Order lines in render:', order.order_lines)
 
-  const totalHT = (order.order_lines || []).reduce((sum, line) => sum + (line.line_total_ht || 0), 0)
-  const totalTTC = (order.order_lines || []).reduce((sum, line) => sum + (line.line_total_ttc || 0), 0)
+  const displayLines = editMode ? editedLines : (order.order_lines || [])
+  const totalHT = displayLines.reduce((sum, line) => sum + (line.line_total_ht || 0), 0)
+  const totalTTC = displayLines.reduce((sum, line) => sum + (line.line_total_ttc || 0), 0)
   const totalTVA = totalTTC - totalHT
 
   const canChangeStatus = user.role === 'admin'
+  const canEdit = order.status === 'en_attente'
 
   return (
     <AppLayout user={user}>
@@ -295,11 +438,67 @@ export default function OrderDetailPage() {
 
         {/* Produits commandés */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 border-b">
+          <div className="p-6 border-b flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">
-              Produits commandés ({(order.order_lines || []).length})
+              Produits commandés ({displayLines.length})
             </h3>
+            {canEdit && !editMode && (
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-2 px-4 py-2 bg-[#6B8E23] text-white rounded-lg hover:bg-[#556B1F] transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                Modifier
+              </button>
+            )}
+            {editMode && (
+              <div className="flex gap-2">
+                <button
+                  onClick={saveChanges}
+                  disabled={updating || displayLines.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  Sauvegarder
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  disabled={updating}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                  Annuler
+                </button>
+              </div>
+            )}
           </div>
+
+          {editMode && (
+            <div className="p-6 border-b bg-gray-50">
+              <div className="flex gap-2">
+                <select
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B8E23] focus:border-transparent"
+                >
+                  <option value="">Sélectionner un produit à ajouter...</option>
+                  {allProducts.map(product => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} - {product.retail_price.toFixed(2)} €
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={addProduct}
+                  disabled={!selectedProductId}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#6B8E23] text-white rounded-lg hover:bg-[#556B1F] transition-colors disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </button>
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -325,10 +524,15 @@ export default function OrderDetailPage() {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total TTC
                   </th>
+                  {editMode && (
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {(order.order_lines || []).map((line) => (
+                {displayLines.map((line) => (
                   <tr key={line.id}>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{line.product_name}</div>
@@ -337,7 +541,17 @@ export default function OrderDetailPage() {
                       <div className="text-sm text-gray-500">{line.product_sku}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="text-sm text-gray-900">{line.quantity}</div>
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.quantity}
+                          onChange={(e) => updateLineQuantity(line.id, parseInt(e.target.value) || 1)}
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-[#6B8E23] focus:border-transparent"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900">{line.quantity}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-gray-900">{line.unit_price_ht.toFixed(2)} €</div>
@@ -351,12 +565,23 @@ export default function OrderDetailPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm font-semibold text-[#6B8E23]">{line.line_total_ttc.toFixed(2)} €</div>
                     </td>
+                    {editMode && (
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => removeLine(line.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
               <tfoot className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
+                  <td colSpan={editMode ? 5 : 5} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
                     TOTAUX :
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -365,6 +590,7 @@ export default function OrderDetailPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-[#6B8E23] text-lg">{totalTTC.toFixed(2)} €</div>
                   </td>
+                  {editMode && <td></td>}
                 </tr>
               </tfoot>
             </table>
