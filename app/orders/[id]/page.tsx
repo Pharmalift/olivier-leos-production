@@ -72,10 +72,12 @@ export default function OrderDetailPage() {
             .single()
 
           // Charger les lignes de commande
-          const { data: orderLines } = await supabase
+          const { data: orderLines, error: linesError } = await supabase
             .from('order_lines')
             .select('*')
             .eq('order_id', orderData.id)
+
+          console.log('Order lines loaded:', orderLines, 'Error:', linesError)
 
           // Pour chaque ligne, charger le nom du produit
           const linesWithProducts = await Promise.all(
@@ -93,12 +95,18 @@ export default function OrderDetailPage() {
             })
           )
 
-          setOrder({
+          console.log('Lines with products:', linesWithProducts)
+
+          const finalOrder = {
             ...orderData,
             pharmacy: pharmacy!,
             commercial: commercial!,
             order_lines: linesWithProducts
-          } as OrderWithDetails)
+          } as OrderWithDetails
+
+          console.log('Final order:', finalOrder)
+
+          setOrder(finalOrder)
         }
       }
     } catch (error) {
