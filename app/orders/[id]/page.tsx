@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Order, OrderLine, User, Pharmacy } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2, Save, X, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2, Save, X, Plus, Trash2, XCircle } from 'lucide-react'
 import { useRouter, useParams } from 'next/navigation'
 import { Product } from '@/types/database.types'
 
@@ -293,6 +293,71 @@ export default function OrderDetailPage() {
     }
   }
 
+  async function cancelOrder() {
+    if (!order || order.status !== 'en_attente') return
+
+    const confirmed = confirm('Êtes-vous sûr de vouloir annuler cette commande ? Cette action ne peut pas être annulée.')
+    if (!confirmed) return
+
+    setUpdating(true)
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'annulée' })
+        .eq('id', order.id)
+
+      if (error) throw error
+
+      await loadData()
+      alert('Commande annulée avec succès')
+    } catch (error: any) {
+      console.error('Erreur:', error)
+      alert('Erreur lors de l\'annulation : ' + error.message)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function deleteOrder() {
+    if (!order || user?.role !== 'admin') return
+
+    const confirmed = confirm(
+      `ATTENTION: Vous êtes sur le point de SUPPRIMER DÉFINITIVEMENT la commande ${order.order_number}.\n\n` +
+      'Cette action est IRRÉVERSIBLE et supprimera:\n' +
+      '- La commande\n' +
+      '- Toutes les lignes de commande associées\n\n' +
+      'Êtes-vous absolument certain de vouloir continuer ?'
+    )
+    if (!confirmed) return
+
+    setUpdating(true)
+    try {
+      // Supprimer d'abord les lignes de commande
+      const { error: linesError } = await supabase
+        .from('order_lines')
+        .delete()
+        .eq('order_id', order.id)
+
+      if (linesError) throw linesError
+
+      // Supprimer la commande
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', order.id)
+
+      if (orderError) throw orderError
+
+      alert('Commande supprimée définitivement')
+      router.push('/orders')
+    } catch (error: any) {
+      console.error('Erreur:', error)
+      alert('Erreur lors de la suppression : ' + error.message)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   if (loading || !user || !order) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>
   }
@@ -334,8 +399,8 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Statut */}
-          <div className="flex items-center gap-4">
+          {/* Statut et Actions */}
+          <div className="flex items-center gap-3">
             <span className={`px-4 py-2 inline-flex text-sm font-semibold rounded-full ${
               order.status === 'livrée' ? 'bg-green-100 text-green-800' :
               order.status === 'expédiée' ? 'bg-blue-100 text-blue-800' :
@@ -365,6 +430,32 @@ export default function OrderDetailPage() {
                 <option value="livrée">Livrée</option>
                 <option value="annulée">Annulée</option>
               </select>
+            )}
+
+            {/* Bouton Annuler (pour commandes en attente) */}
+            {order.status === 'en_attente' && (
+              <button
+                onClick={cancelOrder}
+                disabled={updating}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                title="Annuler la commande"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Annuler</span>
+              </button>
+            )}
+
+            {/* Bouton Supprimer (admin uniquement) */}
+            {user.role === 'admin' && (
+              <button
+                onClick={deleteOrder}
+                disabled={updating}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                title="Supprimer définitivement la commande"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Supprimer</span>
+              </button>
             )}
           </div>
         </div>
