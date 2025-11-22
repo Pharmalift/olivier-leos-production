@@ -332,21 +332,26 @@ export default function OrderDetailPage() {
 
     setUpdating(true)
     try {
-      // Supprimer d'abord les lignes de commande
-      const { error: linesError } = await supabase
-        .from('order_lines')
-        .delete()
-        .eq('order_id', order.id)
+      // Get the session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Non authentifié')
+      }
 
-      if (linesError) throw linesError
+      // Call the API route to delete the order
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-      // Supprimer la commande
-      const { error: orderError } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', order.id)
+      const result = await response.json()
 
-      if (orderError) throw orderError
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur lors de la suppression')
+      }
 
       alert('Commande supprimée définitivement')
       router.push('/orders')
