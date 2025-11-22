@@ -7,6 +7,9 @@ import AppLayout from '@/components/AppLayout'
 import { Search, Filter, Calendar } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
 export default function OrdersPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)

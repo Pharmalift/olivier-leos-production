@@ -8,6 +8,9 @@ import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2
 import { useRouter, useParams } from 'next/navigation'
 import { Product } from '@/types/database.types'
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
 interface OrderWithDetails extends Order {
   pharmacy: Pharmacy
   commercial: User
