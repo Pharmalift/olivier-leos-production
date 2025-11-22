@@ -86,9 +86,16 @@ export async function POST(request: NextRequest) {
         : 'http://localhost:3000/admin',
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'philippe.levy@mac.com'
+    // Emails pour les notifications admin - Solène Gayet et optionnellement un autre admin
+    const soleneEmail = 'solene.gayet@lolivierdeLeos.fr'
+    const additionalAdminEmail = process.env.ADMIN_EMAIL // Optionnel
 
-    // Envoyer les deux emails en parallèle (non-bloquant)
+    // Construire la liste des destinataires admin (toujours Solène, + admin si configuré)
+    const adminEmails = additionalAdminEmail
+      ? `${soleneEmail}, ${additionalAdminEmail}`
+      : soleneEmail
+
+    // Envoyer les emails en parallèle (non-bloquant)
     const [pharmacyResult, adminResult] = await Promise.allSettled([
       // Email à la pharmacie
       sendEmail({
@@ -100,9 +107,9 @@ export async function POST(request: NextRequest) {
         emailType: 'order_confirmation',
       }),
 
-      // Email à l'admin
+      // Email aux admins (Solène Gayet + optionnel)
       sendEmail({
-        to: adminEmail,
+        to: adminEmails,
         subject: `Nouvelle commande ${orderNumber} - ${order.pharmacy.name}`,
         html: generateAdminNotificationEmail(adminEmailData),
         text: `Nouvelle commande ${orderNumber} de ${order.pharmacy.name} par ${order.commercial.full_name}`,
