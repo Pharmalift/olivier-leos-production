@@ -143,8 +143,11 @@ export default function OrderDetailPage() {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>
   }
 
-  const totalHT = order.order_lines.reduce((sum, line) => sum + line.line_total_ht, 0)
-  const totalTTC = order.order_lines.reduce((sum, line) => sum + line.line_total_ttc, 0)
+  console.log('Order in render:', order)
+  console.log('Order lines in render:', order.order_lines)
+
+  const totalHT = (order.order_lines || []).reduce((sum, line) => sum + (line.line_total_ht || 0), 0)
+  const totalTTC = (order.order_lines || []).reduce((sum, line) => sum + (line.line_total_ttc || 0), 0)
   const totalTVA = totalTTC - totalHT
 
   const canChangeStatus = user.role === 'admin'
@@ -294,7 +297,7 @@ export default function OrderDetailPage() {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 border-b">
             <h3 className="font-semibold text-gray-900">
-              Produits commandés ({order.order_lines.length})
+              Produits commandés ({(order.order_lines || []).length})
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -325,7 +328,7 @@ export default function OrderDetailPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {order.order_lines.map((line) => (
+                {(order.order_lines || []).map((line) => (
                   <tr key={line.id}>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{line.product_name}</div>
