@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Package, Building2, ShoppingCart, FileText, Settings } from 'lucide-react'
+import { Home, Package, Building2, ShoppingCart, FileText, Settings, BarChart3 } from 'lucide-react'
 
 interface SidebarProps {
   userRole: 'commercial' | 'admin'
@@ -17,6 +17,7 @@ export default function Sidebar({ userRole }: SidebarProps) {
     { href: '/pharmacies', label: 'Pharmacies', icon: Building2, roles: ['commercial', 'admin'] },
     { href: '/orders/new', label: 'Nouvelle commande', icon: ShoppingCart, roles: ['commercial', 'admin'] },
     { href: '/orders', label: 'Commandes', icon: FileText, roles: ['commercial', 'admin'] },
+    { href: '/kpi', label: 'KPI & Analytics', icon: BarChart3, roles: ['admin'] },
     { href: '/admin', label: 'Administration', icon: Settings, roles: ['admin'] },
   ]
 
