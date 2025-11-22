@@ -255,12 +255,11 @@ function NewOrderForm() {
 
       // Créer les lignes de commande
       const orderLines = cart.map(item => {
-        const unitPriceHT = Number(item.product.pcb_price)
-        const discountedUnitPrice = calculateDiscountedPrice(unitPriceHT, discountRate)
+        const unitPriceHT = Number(item.product.pcb_price)  // Prix BRUT (sans remise)
         const unitPriceTTC = Number(item.product.retail_price)
         const quantity = Number(item.quantity)
 
-        const lineTotalHT = discountedUnitPrice * quantity
+        const lineTotalHT = unitPriceHT * quantity  // Total BRUT (sans remise)
         const lineTotalTTC = unitPriceTTC * quantity
 
         return {
@@ -269,9 +268,9 @@ function NewOrderForm() {
           product_name: item.product.name,
           product_sku: item.product.sku,
           quantity: quantity,
-          unit_price_ht: discountedUnitPrice,
+          unit_price_ht: unitPriceHT,  // Prix unitaire BRUT
           unit_price_ttc: unitPriceTTC,
-          line_total_ht: lineTotalHT,
+          line_total_ht: lineTotalHT,  // Total ligne BRUT
           line_total_ttc: lineTotalTTC,
           line_total: lineTotalHT
         }
