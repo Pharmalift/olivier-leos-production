@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Order, User } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
 import { Search, Filter, Calendar } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 export default function OrdersPage() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [filteredOrders, setFilteredOrders] = useState<any[]>([])
@@ -16,29 +18,19 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<string>('all')
+  const mountedRef = useRef(false)
 
   useEffect(() => {
     loadData()
+    mountedRef.current = true
   }, [])
 
-  // Recharger les données quand la page redevient visible
+  // Recharger à chaque fois que la page devient active
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadData()
-      }
+    if (mountedRef.current) {
+      loadData()
     }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    // Recharger aussi au focus de la fenêtre
-    window.addEventListener('focus', loadData)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', loadData)
-    }
-  }, [])
+  }, [pathname, searchParams])
 
   useEffect(() => {
     filterOrders()
