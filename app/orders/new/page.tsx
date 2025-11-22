@@ -152,6 +152,10 @@ function NewOrderForm() {
       const discountAmount = (totalHT * discountRate) / 100
       const totalAfterDiscount = totalHT - discountAmount
 
+      // Calculer les frais de port
+      const shippingAmount = totalAfterDiscount < 300 ? 9.90 : 0
+      const finalTotal = totalAfterDiscount + shippingAmount
+
       // Créer la commande
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -164,7 +168,8 @@ function NewOrderForm() {
           total_before_discount: totalHT,
           discount_rate: discountRate,
           discount_amount: discountAmount,
-          total_amount: totalAfterDiscount,
+          shipping_amount: shippingAmount,
+          total_amount: finalTotal,
           notes: notes || null
         })
         .select()
@@ -449,9 +454,65 @@ function NewOrderForm() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 p-4 bg-[#6B8E23] text-white rounded-lg flex justify-between text-xl font-bold">
-                  <span>Total HT:</span>
-                  <span>{calculateTotal().toFixed(2)} €</span>
+
+                {/* Calcul des totaux avec remise et frais de port */}
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between text-lg">
+                    <span className="font-medium">Total HT avant remise:</span>
+                    <span className="font-bold">{calculateTotal().toFixed(2)} €</span>
+                  </div>
+
+                  {selectedPharmacy && selectedPharmacy.discount_rate > 0 && (
+                    <div className="p-3 bg-green-50 rounded-lg flex justify-between text-lg text-green-700">
+                      <span className="font-medium">Remise ({selectedPharmacy.discount_rate}%):</span>
+                      <span className="font-bold">- {((calculateTotal() * selectedPharmacy.discount_rate) / 100).toFixed(2)} €</span>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between text-lg">
+                    <span className="font-medium">Total HT après remise:</span>
+                    <span className="font-bold">
+                      {selectedPharmacy
+                        ? (calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100).toFixed(2)
+                        : calculateTotal().toFixed(2)
+                      } €
+                    </span>
+                  </div>
+
+                  {selectedPharmacy && (
+                    <>
+                      <div className={`p-3 rounded-lg flex justify-between text-lg ${
+                        (calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) < 300
+                          ? 'bg-orange-50 text-orange-700'
+                          : 'bg-green-50 text-green-700'
+                      }`}>
+                        <span className="font-medium">
+                          Frais de port:
+                          {(calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) >= 300 && (
+                            <span className="text-sm ml-2">(Offerts dès 300€)</span>
+                          )}
+                        </span>
+                        <span className="font-bold">
+                          {(calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100) < 300
+                            ? '9.90 €'
+                            : 'OFFERTS'
+                          }
+                        </span>
+                      </div>
+
+                      <div className="p-4 bg-[#6B8E23] text-white rounded-lg flex justify-between text-xl font-bold">
+                        <span>TOTAL FINAL:</span>
+                        <span>
+                          {(() => {
+                            const totalAfterDiscount = calculateTotal() - (calculateTotal() * (selectedPharmacy.discount_rate || 0)) / 100
+                            const shipping = totalAfterDiscount < 300 ? 9.90 : 0
+                            return (totalAfterDiscount + shipping).toFixed(2)
+                          })()
+                          } €
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

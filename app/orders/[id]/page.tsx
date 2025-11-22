@@ -257,11 +257,15 @@ export default function OrderDetailPage() {
 
       if (insertError) throw insertError
 
-      // Recalculer les totaux avec remise
+      // Recalculer les totaux avec remise et frais de port
       const totalHT = editedLines.reduce((sum, line) => sum + line.line_total_ht, 0)
       const discountRate = order.pharmacy.discount_rate || 0
       const discountAmount = (totalHT * discountRate) / 100
       const totalAfterDiscount = totalHT - discountAmount
+
+      // Calculer les frais de port
+      const shippingAmount = totalAfterDiscount < 300 ? 9.90 : 0
+      const finalTotal = totalAfterDiscount + shippingAmount
 
       const { error: updateError } = await supabase
         .from('orders')
@@ -269,7 +273,8 @@ export default function OrderDetailPage() {
           total_before_discount: totalHT,
           discount_rate: discountRate,
           discount_amount: discountAmount,
-          total_amount: totalAfterDiscount
+          shipping_amount: shippingAmount,
+          total_amount: finalTotal
         })
         .eq('id', order.id)
 
@@ -425,8 +430,19 @@ export default function OrderDetailPage() {
                   <span className="font-medium">- {(order.discount_amount || 0).toFixed(2)} €</span>
                 </div>
               )}
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total HT après remise :</span>
+                <span className="font-medium text-gray-900">{((order.total_amount || totalHT) - (order.shipping_amount || 0)).toFixed(2)} €</span>
+              </div>
+              <div className={`flex justify-between ${(order.shipping_amount || 0) === 0 ? 'text-green-700' : 'text-orange-700'}`}>
+                <span className="font-medium">
+                  Frais de port :
+                  {(order.shipping_amount || 0) === 0 && <span className="text-xs ml-1">(Offerts)</span>}
+                </span>
+                <span className="font-medium">{(order.shipping_amount || 0) === 0 ? 'OFFERTS' : `${(order.shipping_amount || 0).toFixed(2)} €`}</span>
+              </div>
               <div className="flex justify-between pt-2 border-t">
-                <span className="font-semibold text-gray-900">Total net HT :</span>
+                <span className="font-semibold text-gray-900">TOTAL FINAL :</span>
                 <span className="font-bold text-[#6B8E23] text-lg">{(order.total_amount || totalHT).toFixed(2)} €</span>
               </div>
             </div>
@@ -600,10 +616,31 @@ export default function OrderDetailPage() {
                 )}
                 <tr className="bg-gray-100">
                   <td colSpan={editMode ? 4 : 4} className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
-                    TOTAL NET HT :
+                    TOTAL HT APRÈS REMISE :
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm font-bold text-[#6B8E23] text-lg">{(order.total_amount || totalHT).toFixed(2)} €</div>
+                    <div className="text-sm font-bold text-gray-900">{((order.total_amount || totalHT) - (order.shipping_amount || 0)).toFixed(2)} €</div>
+                  </td>
+                  {editMode && <td></td>}
+                </tr>
+                <tr className={(order.shipping_amount || 0) === 0 ? 'bg-green-50' : 'bg-orange-50'}>
+                  <td colSpan={editMode ? 4 : 4} className={`px-6 py-4 text-right text-sm font-semibold ${(order.shipping_amount || 0) === 0 ? 'text-green-700' : 'text-orange-700'}`}>
+                    FRAIS DE PORT :
+                    {(order.shipping_amount || 0) === 0 && <span className="text-xs ml-2">(Offerts dès 300€)</span>}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className={`text-sm font-bold ${(order.shipping_amount || 0) === 0 ? 'text-green-700' : 'text-orange-700'}`}>
+                      {(order.shipping_amount || 0) === 0 ? 'OFFERTS' : `${(order.shipping_amount || 0).toFixed(2)} €`}
+                    </div>
+                  </td>
+                  {editMode && <td></td>}
+                </tr>
+                <tr className="bg-[#6B8E23]">
+                  <td colSpan={editMode ? 4 : 4} className="px-6 py-4 text-right text-sm font-bold text-white">
+                    TOTAL FINAL :
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-bold text-white text-lg">{(order.total_amount || totalHT).toFixed(2)} €</div>
                   </td>
                   {editMode && <td></td>}
                 </tr>

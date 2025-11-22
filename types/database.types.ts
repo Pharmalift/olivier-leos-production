@@ -59,6 +59,7 @@ export interface Order {
   total_before_discount: number
   discount_rate: number
   discount_amount: number
+  shipping_amount: number
   notes: string | null
   created_at: string
   updated_at: string
