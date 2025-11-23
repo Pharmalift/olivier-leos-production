@@ -214,6 +214,7 @@ export default function OrderDetailPage() {
       product_id: product.id,
       product_name: product.name,
       product_sku: product.sku,
+      product_ean: product.ean,
       quantity: 1,
       unit_price_ht: product.pcb_price,
       unit_price_ttc: product.retail_price,
@@ -247,6 +248,7 @@ export default function OrderDetailPage() {
         product_id: line.product_id,
         product_name: line.product_name,
         product_sku: line.product_sku,
+        product_ean: line.product_ean,
         quantity: line.quantity,
         unit_price_ht: line.unit_price_ht,
         unit_price_ttc: line.unit_price_ttc,
@@ -684,7 +686,10 @@ export default function OrderDetailPage() {
                     Produit
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Référence
+                    SKU
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    EAN
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Quantité
@@ -710,6 +715,9 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{line.product_sku}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{line.product_ean || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {editMode ? (

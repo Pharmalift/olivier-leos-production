@@ -74,6 +74,7 @@ export default function ProductsPage() {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.ean?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
@@ -144,6 +145,9 @@ export default function ProductsPage() {
                       {product.name}
                     </h3>
                     <p className="text-sm text-gray-500">Réf: {product.sku}</p>
+                    {product.ean && (
+                      <p className="text-sm text-gray-500">EAN: {product.ean}</p>
+                    )}
                   </div>
                 </div>
 

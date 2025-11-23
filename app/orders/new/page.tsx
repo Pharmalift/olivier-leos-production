@@ -547,6 +547,9 @@ function NewOrderForm() {
                               {discountedPrice.toFixed(2)} € x {item.quantity} = {(discountedPrice * item.quantity).toFixed(2)} €
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
+                              SKU: {item.product.sku} {item.product.ean && `• EAN: ${item.product.ean}`}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
                               Minimum: {item.product.minimum_order_quantity} unités
                             </div>
                           </div>
@@ -683,6 +686,9 @@ function NewOrderForm() {
                           <div className="font-medium">{item.product.name}</div>
                           <div className="text-sm text-gray-600">
                             {discountedPrice.toFixed(2)} € x {item.quantity}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            SKU: {item.product.sku} {item.product.ean && `• EAN: ${item.product.ean}`}
                           </div>
                         </div>
                         <div className="font-bold">{(discountedPrice * item.quantity).toFixed(2)} €</div>
