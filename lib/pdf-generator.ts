@@ -19,6 +19,7 @@ interface OrderPDFData {
   }
   orderLines: Array<{
     product_sku: string
+    product_ean: string | null
     product_name: string
     quantity: number
     unit_price_ht: number
@@ -102,6 +103,7 @@ export function generateOrderPDF(data: OrderPDFData): void {
   // === TABLEAU DES PRODUITS ===
   const tableData = data.orderLines.map(line => [
     line.product_sku,
+    line.product_ean || '-',
     line.product_name,
     line.quantity.toString(),
     `${line.unit_price_ht.toFixed(2)} €`,
@@ -110,25 +112,26 @@ export function generateOrderPDF(data: OrderPDFData): void {
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Référence', 'Produit', 'Qté', 'Prix unit. HT', 'Total HT']],
+    head: [['SKU', 'EAN', 'Produit', 'Qté', 'Prix unit. HT', 'Total HT']],
     body: tableData,
     theme: 'grid',
     headStyles: {
       fillColor: primaryColor,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 10
+      fontSize: 9
     },
     styles: {
-      fontSize: 9,
-      cellPadding: 3
+      fontSize: 8,
+      cellPadding: 2
     },
     columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 80 },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right' },
-      4: { cellWidth: 30, halign: 'right' }
+      0: { cellWidth: 25 },
+      1: { cellWidth: 32 },
+      2: { cellWidth: 70 },
+      3: { cellWidth: 15, halign: 'center' },
+      4: { cellWidth: 25, halign: 'right' },
+      5: { cellWidth: 25, halign: 'right' }
     }
   })
 

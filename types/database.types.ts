@@ -10,6 +10,7 @@ export interface User {
 export interface Product {
   id: string
   sku: string
+  ean: string | null
   name: string
   category: 'Soins Visage' | 'Soins Corps & Cheveux' | 'Hôtel & Spa'
   description: string | null
@@ -73,6 +74,7 @@ export interface OrderLine {
   product_id: string | null
   product_name: string
   product_sku: string
+  product_ean: string | null
   quantity: number
   unit_price_ht: number
   unit_price_ttc: number

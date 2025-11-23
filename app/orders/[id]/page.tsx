@@ -389,6 +389,7 @@ export default function OrderDetailPage() {
         },
         orderLines: order.order_lines.map(line => ({
           product_sku: line.product_sku,
+          product_ean: line.product_ean,
           product_name: line.product_name,
           quantity: line.quantity,
           unit_price_ht: line.unit_price_ht,

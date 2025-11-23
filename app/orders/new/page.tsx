@@ -267,6 +267,7 @@ function NewOrderForm() {
           product_id: item.product.id,
           product_name: item.product.name,
           product_sku: item.product.sku,
+          product_ean: item.product.ean,  // Code-barres EAN
           quantity: quantity,
           unit_price_ht: unitPriceHT,  // Prix unitaire BRUT
           unit_price_ttc: unitPriceTTC,
