@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Order, OrderLine, User, Pharmacy } from '@/types/database.types'
 import AppLayout from '@/components/AppLayout'
-import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2, Save, X, Plus, Trash2, XCircle } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, User as UserIcon, Calendar, FileText, Edit2, Save, X, Plus, Trash2, XCircle, Download } from 'lucide-react'
 import { useRouter, useParams } from 'next/navigation'
 import { Product } from '@/types/database.types'
+import { generateOrderPDF } from '@/lib/pdf-generator'
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'
@@ -366,6 +367,46 @@ export default function OrderDetailPage() {
     }
   }
 
+  function downloadPDF() {
+    if (!order) return
+
+    try {
+      generateOrderPDF({
+        orderNumber: order.order_number,
+        orderDate: order.order_date,
+        orderType: order.order_type,
+        pharmacy: {
+          name: order.pharmacy.name,
+          address: order.pharmacy.address,
+          postal_code: order.pharmacy.postal_code,
+          city: order.pharmacy.city,
+          phone: order.pharmacy.phone || undefined,
+          email: order.pharmacy.email || undefined
+        },
+        commercial: {
+          full_name: order.commercial.full_name,
+          email: order.commercial.email || undefined
+        },
+        orderLines: order.order_lines.map(line => ({
+          product_sku: line.product_sku,
+          product_name: line.product_name,
+          quantity: line.quantity,
+          unit_price_ht: line.unit_price_ht,
+          line_total_ht: line.line_total_ht
+        })),
+        total_before_discount: order.total_before_discount,
+        discount_rate: order.discount_rate,
+        discount_amount: order.discount_amount,
+        shipping_amount: order.shipping_amount,
+        total_amount: order.total_amount,
+        notes: order.notes || undefined
+      })
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error)
+      alert('Erreur lors de la génération du PDF')
+    }
+  }
+
   if (loading || !user || !order) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>
   }
@@ -439,6 +480,16 @@ export default function OrderDetailPage() {
                 <option value="annulée">Annulée</option>
               </select>
             )}
+
+            {/* Bouton Télécharger PDF */}
+            <button
+              onClick={downloadPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-[#6B8E23] text-white rounded-lg hover:bg-[#5a7a1d] transition-colors"
+              title="Télécharger la commande en PDF"
+            >
+              <Download className="w-4 h-4" />
+              <span>Télécharger PDF</span>
+            </button>
 
             {/* Bouton Annuler (pour commandes en attente) */}
             {order.status === 'en_attente' && (
