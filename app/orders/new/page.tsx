@@ -12,20 +12,20 @@ interface CartItem {
   quantity: number
 }
 
-// Données d'implantation type
+// Données d'implantation type (SKU mis à jour selon la base de données)
 const IMPLANTATION_DEFAULTS: Record<string, number> = {
-  'HN100OL20': 6,  // Huile Nettoyante 100ml
-  'BT100OL20': 6,  // Brume Tonique 100ml
-  'SP030OL20': 6,  // Sérum Perlé 30ml
-  'CC050OL20': 6,  // Crème Confort 50ml
-  'EM075OL20': 6,  // Exfoliant Moussant 75ml
-  'MH075OL20': 6,  // Masque Hydratant 75ml
-  'BR005OL20': 12, // Beurre Réconfort 5g
+  'HN100OL22': 6,  // Huile Nettoyante Démaquillante 100ml
+  'TV100OL21': 6,  // Brume Tonique Rafraîchissante 100ml
+  'SV030OL21': 6,  // Sérum Perlé Sublimateur 30ml
+  'CV050OL21': 6,  // Crème Confort Globale 50ml
+  'EV075OL25': 6,  // Exfoliant Moussant Pureté 75ml
+  'MV075OL25': 6,  // Masque Hydratant Eclat 75ml
+  'BR005OL20': 12, // Beurre Réconfort multiusages 5g
   'HS100OL20': 6,  // Huile Sèche Sublime 100ml
-  'SS080OL25': 12, // Savon Olivier Verveine 80g
-  'SE290OL25': 6,  // Savon Essentiel Mains 290ml
-  'ER500OL25': 6,  // Éco-recharge Savon 500ml
-  'SH290OL25': 6   // Shampooing 290ml
+  'SS080OL25': 12, // Savon Parfumé Olivier Verveine 80g
+  'SM290OL20': 6,  // Savon Essentiel pour les mains 290ml
+  'SM500OL21': 6,  // Ecorecharge Savon Essentiel 500ml
+  'SH290OL23': 6   // Shampoing Doux 290ml
 }
 
 function NewOrderForm() {
