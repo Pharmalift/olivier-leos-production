@@ -282,21 +282,15 @@ function NewOrderForm() {
 
       if (linesError) throw linesError
 
-      // TODO: Réactiver l'envoi d'emails une fois la route API corrigée sur Vercel
       // Envoyer les emails en arrière-plan (non-bloquant)
-      // if (selectedPharmacy.email) {
-      //   sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
-      //     console.error('⚠️ Erreur lors de l\'envoi des emails (non-bloquant):', error)
-      //   })
-      // }
+      if (selectedPharmacy.email) {
+        sendOrderEmails(order.id, orderNumber, selectedPharmacy.email).catch(error => {
+          console.error('⚠️ Erreur lors de l\'envoi des emails (non-bloquant):', error)
+          // L'erreur est loggée mais n'empêche pas la création de la commande
+        })
+      }
 
-      console.log('📧 Emails à envoyer:', {
-        orderId: order.id,
-        orderNumber,
-        pharmacyEmail: selectedPharmacy.email
-      })
-
-      alert('✅ Commande créée avec succès!\n\n⚠️ Note: L\'envoi automatique d\'emails est temporairement désactivé.')
+      alert('✅ Commande créée avec succès!\n\n📧 Les emails de confirmation sont en cours d\'envoi.')
       router.push('/orders')
     } catch (error: any) {
       console.error('Erreur:', error)
