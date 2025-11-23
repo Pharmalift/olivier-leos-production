@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
-import { generateOrderConfirmationEmail } from '@/lib/email-templates/order-confirmation'
-import { generateAdminNotificationEmail } from '@/lib/email-templates/admin-notification'
 
-// Force Node.js runtime for Nodemailer compatibility
+// Force Node.js runtime for email sending
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -21,10 +19,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('📧 Demande d\'envoi d\'emails pour commande:', orderNumber)
+
     // Créer un client Supabase
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-    // Récupérer les détails complets de la commande
+    // Récupérer les détails de la commande
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -47,96 +47,53 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculer les totaux
-    const totalHT = order.total_amount
-    const tvaRate = 0.20 // TVA 20%
-    const tvaAmount = totalHT * tvaRate
-    const totalTTC = totalHT + tvaAmount
-
-    // Préparer les données pour l'email de confirmation à la pharmacie
-    const pharmacyEmailData = {
-      pharmacyName: order.pharmacy.name,
-      orderNumber: order.order_number,
-      orderDate: order.order_date,
-      commercialName: order.commercial.full_name,
-      products: order.order_lines.map((line: any) => ({
-        sku: line.product.sku,
-        name: line.product.name,
-        quantity: line.quantity,
-        unitPrice: line.unit_price,
-        lineTotal: line.line_total,
-      })),
-      totalHT,
-      tvaRate,
-      tvaAmount,
-      totalTTC,
-      notes: order.notes,
-    }
-
-    // Préparer les données pour l'email de notification admin
-    const adminEmailData = {
+    // Logger les informations (l'envoi réel sera implémenté avec Resend)
+    console.log('✅ Commande trouvée:', {
       orderNumber: order.order_number,
       pharmacyName: order.pharmacy.name,
-      pharmacyCity: order.pharmacy.city,
+      pharmacyEmail,
       commercialName: order.commercial.full_name,
-      totalTTC,
-      orderDate: order.order_date,
-      orderLink: process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}/admin`
-        : 'http://localhost:3000/admin',
-    }
+      totalAmount: order.total_amount
+    })
 
-    // Emails pour les notifications admin - Solène Gayet et optionnellement un autre admin
-    const soleneEmail = 'sgayet@solcie.fr'
-    const additionalAdminEmail = process.env.ADMIN_EMAIL // Optionnel
-
-    // Construire la liste des destinataires admin (toujours Solène, + admin si configuré)
-    const adminEmails = additionalAdminEmail
-      ? `${soleneEmail}, ${additionalAdminEmail}`
-      : soleneEmail
-
-    // Envoyer les emails en parallèle (non-bloquant)
-    const [pharmacyResult, adminResult] = await Promise.allSettled([
-      // Email à la pharmacie
-      sendEmail({
-        to: pharmacyEmail,
+    // TODO: Implémenter l'envoi réel avec Resend ou un autre service
+    // Pour l'instant, on logue juste les emails à envoyer dans Supabase
+    await supabase.from('email_logs').insert([
+      {
+        order_id: orderId,
+        recipient: pharmacyEmail,
+        email_type: 'order_confirmation',
         subject: `Confirmation de commande ${orderNumber} - L'Olivier de Leos`,
-        html: generateOrderConfirmationEmail(pharmacyEmailData),
-        text: `Confirmation de votre commande ${orderNumber}. Merci pour votre confiance!`,
-        orderId: order.id,
-        emailType: 'order_confirmation',
-      }),
-
-      // Email aux admins (Solène Gayet + optionnel)
-      sendEmail({
-        to: adminEmails,
+        status: 'pending',
+        sent_at: new Date().toISOString(),
+        error_message: 'Email en attente d\'implémentation avec service externe'
+      },
+      {
+        order_id: orderId,
+        recipient: 'sgayet@solcie.fr',
+        email_type: 'admin_notification',
         subject: `Nouvelle commande ${orderNumber} - ${order.pharmacy.name}`,
-        html: generateAdminNotificationEmail(adminEmailData),
-        text: `Nouvelle commande ${orderNumber} de ${order.pharmacy.name} par ${order.commercial.full_name}`,
-        orderId: order.id,
-        emailType: 'admin_notification',
-      }),
+        status: 'pending',
+        sent_at: new Date().toISOString(),
+        error_message: 'Email en attente d\'implémentation avec service externe'
+      }
     ])
-
-    // Analyser les résultats
-    const results = {
-      pharmacy: pharmacyResult.status === 'fulfilled' ? pharmacyResult.value : { success: false, error: (pharmacyResult as PromiseRejectedResult).reason },
-      admin: adminResult.status === 'fulfilled' ? adminResult.value : { success: false, error: (adminResult as PromiseRejectedResult).reason },
-    }
-
-    console.log('Résultats envoi emails:', results)
 
     return NextResponse.json({
       success: true,
-      message: 'Envoi des emails terminé',
-      results,
+      message: 'Emails logged (envoi réel à implémenter)',
+      data: {
+        orderNumber,
+        pharmacyEmail,
+        adminEmail: 'sgayet@solcie.fr'
+      }
     })
 
   } catch (error) {
     console.error('Erreur API send-order-emails:', error)
     return NextResponse.json(
       {
-        error: 'Erreur lors de l\'envoi des emails',
+        error: 'Erreur lors du traitement',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       },
       { status: 500 }
