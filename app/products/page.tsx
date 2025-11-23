@@ -73,7 +73,6 @@ export default function ProductsPage() {
 
       if (productsData) {
         setProducts(productsData)
-        setFilteredProducts(productsData)
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
